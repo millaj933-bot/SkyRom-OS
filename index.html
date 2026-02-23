@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>SkyRom OS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        :root {
+            --primary: #007AFF;
+            --bg: #000000;
+            --card: rgba(255, 255, 255, 0.15);
+            --text: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.6);
+            --blur: 25px;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        /* Boot Screen */
+        .boot-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.8s;
+        }
+
+        .boot-logo {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+            margin-bottom: 30px;
+            animation: pulse 2s infinite;
+            box-shadow: 0 0 60px rgba(102, 126, 234, 0.5);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .boot-text {
+            color: white;
+            font-size: 20px;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+
+        .boot-bar {
+            width: 150px;
+            height: 3px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+            margin-top: 40px;
+            overflow: hidden;
+        }
+
+        .boot-progress {
+            height: 100%;
+            width: 0%;
+            background: white;
+            border-radius: 3px;
+            animation: load 2s ease-out forwards;
+        }
+
+        @keyframes load {
+            to { width: 100%; }
+        }
+
+        /* Lock Screen */
+        .lock-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            z-index: 9999;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .lock-screen.unlocked {
+            transform: translateY(-100%);
+        }
+
+        .lock-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.4) 100%);
+            backdrop-filter: blur(0px);
+        }
+
+        .lock-time {
+            position: absolute;
+            top: 80px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: white;
+        }
+
+        .lock-clock {
+            font-size: 80px;
+            font-weight: 200;
+            letter-spacing: -2px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .lock-date {
+            font-size: 18px;
+            font-weight: 400;
+            margin-top: 10px;
+            text-shadow: 0 1px 5px rgba(0,0,0,0.3);
+        }
+
+        .lock-hint {
+            position: absolute;
+            bottom: 100px;
+            width: 100%;
+            text-align: center;
+            color: rgba(255,255,255,0.8);
+            font-size: 14px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .lock-bar {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 5px;
+            background: white;
+            border-radius: 3px;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 44px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 25px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 1000;
+            transition: color 0.3s;
+        }
+
+        .status-left {
+            width: 80px;
+        }
+
+        .status-time {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 15px;
+            letter-spacing: 0.5px;
+        }
+
+        .status-right {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .signal-bars {
+            display: flex;
+            gap: 2px;
+            align-items: flex-end;
+            height: 12px;
+        }
+
+        .signal-bar {
+            width: 3px;
+            background: currentColor;
+            border-radius: 1px;
+        }
+
+        .signal-bar:nth-child(1) { height: 4px; }
+        .signal-bar:nth-child(2) { height: 6px; }
+        .signal-bar:nth-child(3) { height: 8px; }
+        .signal-bar:nth-child(4) { height: 10px; }
+
+        /* Home Screen */
+        .home-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            overflow: hidden;
+        }
+
+        .home-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.1);
+        }
+
+        .pages-container {
+            display: flex;
+            height: 100%;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .page {
+            min-width: 100%;
+            height: 100%;
+            padding: 100px 25px 120px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px 10px;
+            align-content: start;
+        }
+
+        .app-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .app-icon:active {
+            transform: scale(0.9);
+            filter: brightness(0.8);
+        }
+
+        .app-icon-visual {
+            width: 60px;
+            height: 60px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2), 
+                        inset 0 1px 0 rgba(255,255,255,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .app-icon-visual::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.3), transparent);
+            border-radius: 14px 14px 0 0;
+        }
+
+        .app-name {
+            color: white;
+            font-size: 11px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+            text-align: center;
+            max-width: 70px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Dock */
+        .dock {
+            position: fixed;
+            bottom: 20px;
+            left: 15px;
+            right: 15px;
+            height: 85px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border-radius: 30px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0 10px;
+            z-index: 100;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .dock .app-icon-visual {
+            width: 55px;
+            height: 55px;
+        }
+
+        /* Page Indicators */
+        .page-dots {
+            position: fixed;
+            bottom: 110px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 100;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.4);
+            transition: all 0.3s;
+        }
+
+        .dot.active {
+            background: white;
+            width: 20px;
+            border-radius: 4px;
+        }
+
+        /* App Windows */
+        .app-window {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 2000;
+            transform: scale(0) translateY(100%);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .app-window.open {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+
+        .app-header {
+            height: 90px;
+            background: rgba(30, 30, 30, 0.95);
+            backdrop-filter: blur(20px);
+            display: flex;
+            align-items: flex-end;
+            padding: 10px 20px 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .app-title {
+            color: white;
+            font-size: 17px;
+            font-weight: 600;
+            flex: 1;
+            text-align: center;
+        }
+
+        .app-back, .app-action {
+            color: #007AFF;
+            font-size: 17px;
+            min-width: 60px;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .app-content {
+            height: calc(100% - 90px);
+            overflow-y: auto;
+            background: #000;
+            color: white;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Settings App */
+        .settings-list {
+            padding: 20px;
+        }
+
+        .settings-group {
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .settings-item {
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .settings-item:last-child {
+            border-bottom: none;
+        }
+
+        .settings-item:active {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .settings-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .settings-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .settings-label {
+            font-size: 16px;
+        }
+
+        .settings-value {
+            color: rgba(255,255,255,0.5);
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .toggle {
+            width: 50px;
+            height: 30px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 15px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle.active {
+            background: #34C759;
+        }
+
+        .toggle-knob {
+            width: 26px;
+            height: 26px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .toggle.active .toggle-knob {
+            transform: translateX(20px);
+        }
+
+        /* Themes App */
+        .wallpaper-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            padding: 20px;
+        }
+
+        .wallpaper-item {
+            aspect-ratio: 9/19;
+            border-radius: 20px;
+            overflow: hidden;
+            cursor: pointer;
+            position: relative;
+            border: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .wallpaper-item.selected {
+            border-color: #007AFF;
+            transform: scale(0.95);
+        }
+
+        .wallpaper-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .wallpaper-check {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 24px;
+            height: 24px;
+            background: #007AFF;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .wallpaper-item.selected .wallpaper-check {
+            opacity: 1;
+        }
+
+        /* Calculator App */
+        .calculator {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            padding: 20px;
+            height: 100%;
+            align-content: end;
+            padding-bottom: 40px;
+        }
+
+        .calc-display {
+            grid-column: 1 / -1;
+            text-align: right;
+            font-size: 64px;
+            font-weight: 300;
+            margin-bottom: 20px;
+            padding: 0 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .calc-btn {
+            aspect-ratio: 1;
+            border-radius: 50%;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            transition: all 0.1s;
+            background: #333;
+            color: white;
+        }
+
+        .calc-btn:active {
+            transform: scale(0.9);
+            filter: brightness(1.3);
+        }
+
+        .calc-btn.operator {
+            background: #FF9500;
+            color: white;
+        }
+
+        .calc-btn.function {
+            background: #A5A5A5;
+            color: black;
+        }
+
+        .calc-btn.zero {
+            grid-column: span 2;
+            border-radius: 40px;
+            aspect-ratio: auto;
+            text-align: left;
+            padding-left: 35px;
+        }
+
+        /* Notes App */
+        .notes-list {
+            padding: 20px;
+        }
+
+        .note-item {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        .note-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .note-preview {
+            color: rgba(255,255,255,0.6);
+            font-size: 14px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .note-date {
+            color: rgba(255,255,255,0.4);
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        .add-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: #007AFF;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            color: white;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0,122,255,0.4);
+        }
+
+        /* Weather App */
+        .weather-main {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(to bottom, #667eea 0%, #764ba2 100%);
+        }
+
+        .weather-temp {
+            font-size: 96px;
+            font-weight: 200;
+        }
+
+        .weather-desc {
+            font-size: 20px;
+            margin-top: 10px;
+        }
+
+        .weather-high-low {
+            margin-top: 10px;
+            opacity: 0.8;
+        }
+
+        .forecast {
+            padding: 20px;
+        }
+
+        .forecast-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Camera App */
+        .camera-view {
+            width: 100%;
+            height: 100%;
+            background: #000;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .camera-placeholder {
+            width: 100%;
+            height: 70%;
+            background: linear-gradient(45deg, #1a1a1a, #2a2a2a);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            color: #333;
+        }
+
+        .camera-controls {
+            position: absolute;
+            bottom: 40px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0 40px;
+        }
+
+        .shutter-btn {
+            width: 70px;
+            height: 70px;
+            border: 4px solid white;
+            border-radius: 50%;
+            padding: 4px;
+            cursor: pointer;
+        }
+
+        .shutter-inner {
+            width: 100%;
+            height: 100%;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.1s;
+        }
+
+        .shutter-btn:active .shutter-inner {
+            transform: scale(0.9);
+        }
+
+        /* Control Center */
+        .control-center {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            backdrop-filter: blur(50px);
+            z-index: 5000;
+            transform: translateY(-100%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 60px 20px 20px;
+        }
+
+        .control-center.open {
+            transform: translateY(0);
+        }
+
+        .cc-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .cc-module {
+            background: rgba(255,255,255,0.15);
+            border-radius: 20px;
+            padding: 15px;
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .cc-icon {
+            width: 45px;
+            height: 45px;
+            border-radiu
