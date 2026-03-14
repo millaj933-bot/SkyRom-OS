@@ -1,47 +1,67 @@
 <!DOCTYPE html>
-
-<html>
+<html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SkyRom OS</title>
 
 <style>
 
 :root{
---glass:rgba(255,255,255,.1);
---blur:blur(30px);
+--glass:rgba(255,255,255,.08);
+--blur:blur(40px);
+--radius:28px;
+--ease:cubic-bezier(.2,.9,.3,1);
 }
 
 *{
 margin:0;
 padding:0;
 box-sizing:border-box;
-font-family:system-ui;
+font-family:-apple-system,system-ui;
 }
 
 body{
 height:100vh;
 overflow:hidden;
-background:linear-gradient(150deg,#0f172a,#020617);
+background:linear-gradient(160deg,#0f172a,#020617);
 color:white;
 }
 
-/* STATUS BAR */
+/* LOCKSCREEN */
+
+.lockscreen{
+position:absolute;
+width:100%;
+height:100%;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+font-size:70px;
+backdrop-filter:blur(20px);
+z-index:100;
+transition:.5s;
+}
+
+.unlock{
+opacity:0;
+pointer-events:none;
+}
+
+/* STATUS */
 
 .status{
 position:absolute;
-top:0;
+top:6px;
 width:100%;
-height:35px;
 display:flex;
 justify-content:space-between;
 padding:0 15px;
-align-items:center;
 font-size:14px;
 }
 
-/* DYNAMIC ISLAND */
+/* ISLAND */
 
 .island{
 position:absolute;
@@ -49,71 +69,78 @@ top:6px;
 left:50%;
 transform:translateX(-50%);
 width:120px;
-height:28px;
+height:30px;
 background:black;
 border-radius:50px;
 display:flex;
 align-items:center;
 justify-content:center;
-transition:.35s cubic-bezier(.2,.9,.3,1);
+transition:.35s var(--ease);
 }
 
 .island.active{
 width:260px;
-height:55px;
+height:60px;
 }
 
-/* GRID ORIGINOS */
+/* GRID */
 
 .grid{
 position:absolute;
-top:60px;
+top:70px;
 width:100%;
 display:grid;
 grid-template-columns:repeat(4,1fr);
-grid-auto-rows:90px;
-gap:12px;
-padding:10px 20px;
+grid-auto-rows:95px;
+gap:14px;
+padding:10px 18px;
 }
 
 .tile{
 background:var(--glass);
 backdrop-filter:var(--blur);
-border-radius:22px;
+border-radius:var(--radius);
 display:flex;
 align-items:center;
 justify-content:center;
 font-size:28px;
-transition:transform .3s cubic-bezier(.2,.9,.3,1),box-shadow .3s;
 cursor:pointer;
+transition:.25s var(--ease);
 }
 
 .tile:hover{
-transform:scale(1.05);
-box-shadow:0 15px 40px rgba(0,0,0,.4);
+transform:scale(1.06);
 }
+
+/* WIDGET */
 
 .widget-large{
 grid-column:span 2;
 grid-row:span 2;
-font-size:38px;
+font-size:40px;
 }
 
 /* DOCK */
 
 .dock{
 position:absolute;
-bottom:25px;
+bottom:22px;
 left:50%;
 transform:translateX(-50%);
-width:85%;
-height:80px;
+width:86%;
+height:90px;
 background:var(--glass);
 backdrop-filter:var(--blur);
-border-radius:30px;
+border-radius:40px;
 display:flex;
-justify-content:space-around;
 align-items:center;
+justify-content:space-around;
+}
+
+/* DOCK ZOOM */
+
+.dock .tile:hover{
+transform:scale(1.35);
 }
 
 /* APPS */
@@ -122,19 +149,39 @@ align-items:center;
 position:absolute;
 top:50%;
 left:50%;
-width:88%;
-height:82%;
-background:var(--glass);
-backdrop-filter:blur(40px);
-border-radius:30px;
-transform:translate(-50%,-50%) scale(.8);
+width:90%;
+height:84%;
+background:rgba(0,0,0,.45);
+backdrop-filter:blur(50px);
+border-radius:35px;
+
+transform:translate(-50%,-50%) scale(.82);
 opacity:0;
-transition:.35s cubic-bezier(.2,.9,.3,1);
+transition:.35s var(--ease);
 }
 
 .app.active{
 transform:translate(-50%,-50%) scale(1);
 opacity:1;
+}
+
+/* CONTROL CENTER */
+
+.control{
+position:absolute;
+top:-100%;
+right:0;
+width:100%;
+height:50%;
+background:rgba(0,0,0,.7);
+backdrop-filter:blur(50px);
+transition:.4s;
+border-bottom-left-radius:35px;
+border-bottom-right-radius:35px;
+}
+
+.control.show{
+top:0;
 }
 
 /* NOTIFICATION */
@@ -145,32 +192,26 @@ top:-120px;
 left:50%;
 transform:translateX(-50%);
 background:black;
-padding:15px 25px;
+padding:14px 22px;
 border-radius:20px;
 transition:.4s;
 }
 
 .notification.show{
-top:50px;
-}
-
-/* WIDGET */
-
-.widget{
-cursor:grab;
+top:60px;
 }
 
 /* CHAT */
 
 .chat{
-height:75%;
+height:70%;
 overflow:auto;
-padding:10px;
+padding:12px;
 }
 
 .msg{
 background:#1e293b;
-margin:5px;
+margin:6px;
 padding:8px;
 border-radius:10px;
 }
@@ -179,7 +220,7 @@ border-radius:10px;
 
 .gesture{
 position:absolute;
-bottom:5px;
+bottom:6px;
 width:100%;
 display:flex;
 justify-content:center;
@@ -190,14 +231,22 @@ width:120px;
 height:6px;
 background:white;
 border-radius:10px;
-opacity:.5;
+opacity:.6;
 }
 
 </style>
-
 </head>
 
 <body>
+
+<!-- LOCKSCREEN -->
+
+<div class="lockscreen" id="lock">
+<div id="clock"></div>
+<div style="font-size:14px">toca para desbloquear</div>
+</div>
+
+<!-- STATUS -->
 
 <div class="status">
 <div id="time"></div>
@@ -208,12 +257,25 @@ opacity:.5;
 
 <div class="notification" id="noti">Notificación</div>
 
+<!-- CONTROL CENTER -->
+
+<div class="control" id="control">
+
+<div style="padding:20px;font-size:22px">
+Control Center
+</div>
+
+<button onclick="notify('wifi activado')">WiFi</button>
+<button onclick="notify('bluetooth activado')">Bluetooth</button>
+
+</div>
+
 <!-- GRID -->
 
 <div class="grid">
 
-<div class="tile widget-large widget">
-<div id="clock"></div>
+<div class="tile widget-large">
+<div id="bigclock"></div>
 </div>
 
 <div class="tile" onclick="openApp('ai')">🤖</div>
@@ -236,11 +298,13 @@ opacity:.5;
 
 <div class="app" id="ai">
 
-<div style="padding:10px;font-weight:bold">SkyAI</div>
+<div style="padding:12px;font-weight:bold">
+SkyAI
+</div>
 
 <div class="chat" id="chat"></div>
 
-<input id="input" style="width:70%">
+<input id="input">
 <button onclick="send()">Enviar</button>
 
 </div>
@@ -249,9 +313,12 @@ opacity:.5;
 
 <div class="app" id="store">
 
-<div style="padding:10px;font-weight:bold">SkyStore</div>
+<div style="padding:12px;font-weight:bold">
+SkyStore
+</div>
 
-<button onclick="install('🎮')">instalar juego</button> <button onclick="install('📷')">instalar cámara</button>
+<button onclick="install('🎮')">instalar juego</button>
+<button onclick="install('📷')">instalar cámara</button>
 
 </div>
 
@@ -270,12 +337,19 @@ let d=new Date()
 let t=d.getHours()+":"+String(d.getMinutes()).padStart(2,"0")
 
 document.getElementById("clock").innerText=t
+document.getElementById("bigclock").innerText=t
 document.getElementById("time").innerText=t
 
 }
 
 setInterval(clock,1000)
 clock()
+
+/* UNLOCK */
+
+document.getElementById("lock").onclick=()=>{
+document.getElementById("lock").classList.add("unlock")
+}
 
 /* APPS */
 
@@ -292,9 +366,7 @@ island("App abierta")
 /* HOME */
 
 function home(){
-
 document.querySelectorAll(".app").forEach(a=>a.classList.remove("active"))
-
 }
 
 /* ISLAND */
@@ -343,15 +415,7 @@ chat.appendChild(user)
 let ai=document.createElement("div")
 ai.className="msg"
 
-if(input.value.includes("hola")){
-ai.innerText="hola 👋"
-}
-else if(input.value.includes("hora")){
-ai.innerText=new Date().toLocaleTimeString()
-}
-else{
-ai.innerText="estoy aprendiendo"
-}
+ai.innerText="procesando..."
 
 chat.appendChild(ai)
 
@@ -359,7 +423,7 @@ input.value=""
 
 }
 
-/* INSTALL */
+/* STORE */
 
 function install(icon){
 
@@ -368,7 +432,6 @@ let grid=document.querySelector(".grid")
 let app=document.createElement("div")
 
 app.className="tile"
-
 app.innerText=icon
 
 grid.appendChild(app)
@@ -376,6 +439,20 @@ grid.appendChild(app)
 notify("app instalada")
 
 }
+
+/* CONTROL CENTER */
+
+document.addEventListener("wheel",(e)=>{
+
+if(e.deltaY<0){
+document.getElementById("control").classList.add("show")
+}
+
+if(e.deltaY>0){
+document.getElementById("control").classList.remove("show")
+}
+
+})
 
 </script>
 
