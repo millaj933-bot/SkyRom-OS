@@ -1,267 +1,422 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SkyRom OS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>PhantomOS v3</title>
 
 <style>
 
-body{
-margin:0;
-font-family:Arial;
-overflow:hidden;
-background:black;
+:root{
+--bg:#020617;
+--glass:rgba(255,255,255,.08);
+--text:white;
 }
 
-/* BOOT */
+.light{
+--bg:#f1f5f9;
+--glass:rgba(0,0,0,.08);
+--text:black;
+}
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:system-ui;
+}
+
+body{
+height:100vh;
+overflow:hidden;
+background:var(--bg);
+color:var(--text);
+transition:.4s;
+}
+
+/* boot */
 
 .boot{
+position:absolute;
+width:100%;
+height:100%;
+background:black;
 display:flex;
 align-items:center;
 justify-content:center;
-height:100vh;
-font-size:40px;
-color:white;
-animation:boot 2s infinite alternate;
+font-size:30px;
+z-index:100;
+animation:boot 2.5s forwards;
 }
 
 @keyframes boot{
-from{opacity:.5}
-to{opacity:1}
+0%{opacity:1}
+90%{opacity:1}
+100%{opacity:0;pointer-events:none}
 }
 
-/* LOCK */
-
-.lock{
-display:none;
-height:100vh;
-background:url('tornado.gif') center/cover;
-align-items:center;
-justify-content:center;
-color:white;
-font-size:30px;
-flex-direction:column;
-}
-
-/* DYNAMIC ISLAND */
+/* dynamic island */
 
 .island{
-
-position:fixed;
-top:10px;
+position:absolute;
+top:15px;
 left:50%;
 transform:translateX(-50%);
+width:120px;
+height:35px;
 background:black;
-color:white;
-padding:10px 25px;
-border-radius:30px;
-font-size:14px;
-display:none;
-animation:island .5s;
-}
-
-@keyframes island{
-from{transform:translateX(-50%) scale(.7);opacity:0}
-to{transform:translateX(-50%) scale(1);opacity:1}
-}
-
-/* HOME */
-
-.home{
-
-display:none;
-grid-template-columns:repeat(4,1fr);
-gap:20px;
-padding:40px;
-
-}
-
-.app{
-
-background:rgba(255,255,255,.2);
-color:white;
-text-align:center;
-padding:20px;
-border-radius:20px;
-backdrop-filter:blur(20px);
-transition:transform .12s cubic-bezier(.2,.8,.2,1);
-}
-
-.app:active{
-transform:scale(.85);
-}
-
-/* APP WINDOW */
-
-.appWindow{
-
-position:absolute;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:white;
-display:none;
-justify-content:center;
+border-radius:50px;
+display:flex;
 align-items:center;
-font-size:30px;
-
+justify-content:center;
+color:white;
+transition:.4s cubic-bezier(.2,.9,.3,1);
 }
 
-/* NOTIFICATION */
+.island.active{
+width:260px;
+height:60px;
+}
+
+/* notification */
 
 .notification{
-
-position:fixed;
+position:absolute;
 top:-100px;
 left:50%;
 transform:translateX(-50%);
-background:white;
+background:rgba(0,0,0,.8);
 padding:15px 25px;
 border-radius:20px;
-box-shadow:0 10px 30px rgba(0,0,0,.3);
-transition:.4s;
-
+transition:.5s;
+color:white;
 }
 
-.show{
-top:40px;
+.notification.show{
+top:70px;
+}
+
+/* widgets */
+
+.widgets{
+position:absolute;
+top:80px;
+left:20px;
+}
+
+.widget{
+background:var(--glass);
+backdrop-filter:blur(25px);
+padding:20px;
+border-radius:20px;
+margin-bottom:15px;
+width:160px;
+}
+
+/* launcher */
+
+.desktop{
+position:absolute;
+top:80px;
+width:100%;
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:30px;
+padding:30px;
+}
+
+.icon{
+width:70px;
+height:70px;
+border-radius:18px;
+background:linear-gradient(145deg,#3b82f6,#2563eb);
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:28px;
+cursor:pointer;
+transition:.3s;
+}
+
+.icon:hover{
+transform:scale(1.15) translateY(-5px);
+}
+
+/* apps */
+
+.app{
+position:absolute;
+top:50%;
+left:50%;
+width:85%;
+height:80%;
+background:var(--glass);
+backdrop-filter:blur(35px);
+border-radius:30px;
+transform:translate(-50%,-50%) scale(.6);
+opacity:0;
+transition:.4s cubic-bezier(.2,.9,.3,1);
+}
+
+.app.active{
+transform:translate(-50%,-50%) scale(1);
+opacity:1;
+}
+
+.topbar{
+height:45px;
+display:flex;
+align-items:center;
+padding-left:20px;
+background:rgba(0,0,0,.1);
+border-radius:30px 30px 0 0;
+}
+
+/* gesture */
+
+.gesture{
+position:absolute;
+bottom:10px;
+width:100%;
+display:flex;
+justify-content:center;
+}
+
+.bar{
+width:120px;
+height:6px;
+background:white;
+border-radius:10px;
+opacity:.5;
+}
+
+button{
+padding:10px;
+margin:5px;
 }
 
 </style>
-
 </head>
 
-<body onload="boot()">
+<body>
 
-<div class="boot" id="boot">SkyRom OS</div>
+<div class="boot">PhantomOS</div>
 
-<div class="lock" id="lock">
-Tap to Unlock
+<div class="island" id="island">
+<span id="islandtext">PhantomOS</span>
 </div>
 
-<div class="island" id="island"></div>
+<div class="notification" id="noti">Notificación</div>
 
-<div class="notification" id="notification"></div>
+<div class="widgets">
 
-<div class="home" id="home">
-
-<div class="app" onclick="openApp('Calculator')">Calculator</div>
-<div class="app" onclick="openApp('Settings')">Settings</div>
-<div class="app" onclick="openApp('Notes')">Notes</div>
-<div class="app" onclick="openApp('Weather')">Weather</div>
-<div class="app" onclick="openApp('Camera')">Camera</div>
-<div class="app" onclick="openApp('Themes')">Themes</div>
-<div class="app" onclick="notify('New message')">Messages</div>
-<div class="app" onclick="notify('Battery 90%')">Battery</div>
+<div class="widget">
+<div id="clock"></div>
+</div>
 
 </div>
 
-<div class="appWindow" id="appWindow">
-<div id="appContent"></div>
+<div class="desktop">
+
+<div class="icon" onclick="openApp('calc')">🧮</div>
+<div class="icon" onclick="openApp('camera')">📷</div>
+<div class="icon" onclick="openApp('gallery')">🖼</div>
+<div class="icon" onclick="toggleTheme()">🌗</div>
+
+</div>
+
+<!-- calculadora -->
+
+<div class="app" id="calc">
+
+<div class="topbar">Calculadora</div>
+
+<div style="padding:20px">
+
+<input id="display" style="width:100%;height:40px;font-size:20px">
+
+<br>
+
+<button onclick="calc('1')">1</button>
+<button onclick="calc('2')">2</button>
+<button onclick="calc('3')">3</button>
+
+<button onclick="calc('+')">+</button>
+
+<br>
+
+<button onclick="calc('4')">4</button>
+<button onclick="calc('5')">5</button>
+<button onclick="calc('6')">6</button>
+
+<button onclick="calc('-')">-</button>
+
+<br>
+
+<button onclick="calc('7')">7</button>
+<button onclick="calc('8')">8</button>
+<button onclick="calc('9')">9</button>
+
+<button onclick="result()">=</button>
+
+</div>
+
+</div>
+
+<!-- camara -->
+
+<div class="app" id="camera">
+
+<div class="topbar">Cámara</div>
+
+<div style="padding:20px">
+
+<video id="video" width="100%" autoplay></video>
+
+<button onclick="startCamera()">encender cámara</button>
+
+</div>
+
+</div>
+
+<!-- galeria -->
+
+<div class="app" id="gallery">
+
+<div class="topbar">Galería</div>
+
+<div style="padding:20px">
+
+<input type="file" accept="image/*" onchange="loadImage(event)">
+
+<img id="img" style="width:100%;margin-top:10px">
+
+</div>
+
+</div>
+
+<div class="gesture" onclick="home()">
+<div class="bar"></div>
 </div>
 
 <script>
 
-/* BOOT */
+/* reloj widget */
 
-function boot(){
+function clock(){
+let d=new Date()
+document.getElementById("clock").innerText=
+d.getHours()+":"+String(d.getMinutes()).padStart(2,"0")
+}
+setInterval(clock,1000)
+clock()
+
+/* dynamic island */
+
+function island(text){
+
+let i=document.getElementById("island")
+let t=document.getElementById("islandtext")
+
+t.innerText=text
+
+i.classList.add("active")
 
 setTimeout(()=>{
-
-document.getElementById("boot").style.display="none"
-document.getElementById("lock").style.display="flex"
-
+i.classList.remove("active")
+t.innerText="PhantomOS"
 },2500)
 
 }
 
-/* UNLOCK */
-
-document.getElementById("lock").onclick=function(){
-
-this.style.display="none"
-document.getElementById("home").style.display="grid"
-
-island("Phone Unlocked")
-
-}
-
-/* OPEN APP */
-
-function openApp(name){
-
-let win=document.getElementById("appWindow")
-let content=document.getElementById("appContent")
-
-content.innerHTML=name+" App"
-
-win.style.display="flex"
-
-win.style.transform="scale(.9)"
-win.style.opacity="0"
-
-requestAnimationFrame(()=>{
-
-win.style.transition=".25s"
-win.style.transform="scale(1)"
-win.style.opacity="1"
-
-})
-
-}
-
-/* SWIPE BACK */
-
-let startX=0
-
-document.addEventListener("touchstart",e=>{
-startX=e.touches[0].clientX
-})
-
-document.addEventListener("touchend",e=>{
-
-let endX=e.changedTouches[0].clientX
-
-if(endX-startX>120){
-
-document.getElementById("appWindow").style.display="none"
-
-}
-
-})
-
-/* DYNAMIC ISLAND */
-
-function island(text){
-
-let island=document.getElementById("island")
-
-island.innerText=text
-island.style.display="block"
-
-setTimeout(()=>{
-island.style.display="none"
-},2000)
-
-}
-
-/* NOTIFICATION */
+/* notificaciones */
 
 function notify(text){
 
-let n=document.getElementById("notification")
+let n=document.getElementById("noti")
 
 n.innerText=text
 
 n.classList.add("show")
 
 setTimeout(()=>{
-
 n.classList.remove("show")
-
 },3000)
+
+}
+
+/* apps */
+
+function openApp(id){
+
+document.querySelectorAll(".app").forEach(a=>{
+a.classList.remove("active")
+})
+
+document.getElementById(id).classList.add("active")
+
+island("App abierta")
+
+vibrate()
+
+}
+
+/* home */
+
+function home(){
+
+document.querySelectorAll(".app").forEach(a=>{
+a.classList.remove("active")
+})
+
+}
+
+/* vibración */
+
+function vibrate(){
+if(navigator.vibrate){
+navigator.vibrate(40)
+}
+}
+
+/* tema */
+
+function toggleTheme(){
+document.body.classList.toggle("light")
+notify("Tema cambiado")
+}
+
+/* calculadora */
+
+function calc(n){
+document.getElementById("display").value+=n
+}
+
+function result(){
+let d=document.getElementById("display")
+d.value=eval(d.value)
+}
+
+/* camara */
+
+function startCamera(){
+
+navigator.mediaDevices.getUserMedia({video:true})
+
+.then(stream=>{
+document.getElementById("video").srcObject=stream
+})
+
+}
+
+/* galeria */
+
+function loadImage(e){
+
+let img=document.getElementById("img")
+
+img.src=URL.createObjectURL(e.target.files[0])
 
 }
 
