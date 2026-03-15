@@ -1,24 +1,1264 @@
-    <script>
-        const $=id=>document.getElementById(id),$$=q=>document.querySelectorAll(q);
-        let apps={},current=null,openApps=[],page=0,theme='dark';
-        const time=()=>{const d=new Date(),h=d.getHours().toString().padStart(2,'0'),m=d.getMinutes().toString().padStart(2,'0'),t=`${h}:${m}`,date=d.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});$('bt').textContent=t;$('lt').textContent=t;$('ld').textContent=date;setTimeout(time,1000)};
-        const boot=()=>{setTimeout(()=>{$('boot').classList.add('hide');setTimeout(()=>{$('boot').style.display='none'},500)},2000)};
-        const unlock=e=>{if(e.type==='touchstart'||e.type==='mousedown'){const y=e.touches?e.touches[0].clientY:e.clientY;const move=ev=>{const cy=ev.touches?ev.touches[0].clientY:ev.clientY;if(cy-y<-100){$('lock').classList.add('open');setTimeout(()=>{$('lock').style.display='none'},500);document.removeEventListener('touchmove',move);document.removeEventListener('mousemove',move)}};document.addEventListener('touchmove',move);document.addEventListener('mousemove',move)}};
-        const swipe=()=>{let sx,ex;const start=e=>{sx=e.touches?e.touches[0].clientX:e.clientX},end=e=>{ex=e.touches?e.changedTouches[0].clientX:e.clientX;const d=ex-sx;if(Math.abs(d)>50){if(d>0&&page>0)page--;else if(d<0&&page<1)page++;$('pages').style.transform=`translateX(-${page*100}%)`;$$('.dot span').forEach((s,i)=>s.classList.toggle('a',i===page)}}};$('home').addEventListener('touchstart',start);$('home').addEventListener('touchend',end);$('home').addEventListener('mousedown',start);$('home').addEventListener('mouseup',end)};
-        const o=name=>{if(apps[name]){apps[name].classList.add('a');openApps.push(name);upSw();return}const w=document.createElement('div');w.className='win';w.id=`win-${name}`;w.innerHTML=getApp(name);document.body.appendChild(w);apps[name]=w;setTimeout(()=>w.classList.add('a'),10);current=name;openApps.push(name);upSw()};
-        const c=name=>{const w=apps[name];w.classList.remove('a');setTimeout(()=>{if(!openApps.includes(name))w.remove()},400);openApps=openApps.filter(a=>a!==name);upSw()};
-        const getApp=n=>{const h=(t,x)=>`<div class="win-h"><div class="win-t">${t}</div><button class="win-x" onclick="c('${n}')">${x}</button></div>`;const m={phone:h('Teléfono','✕')+'<div class="win-c"><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:15px;padding:20px"><div style="aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:24px">1</div><div style="aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:24px">2</div><div style="aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:24px">3</div><div style="aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:24px">4</div><div style="aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:24px">5</div><div style="aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:24px">6</div><div style="aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:24px">7</div><div style="aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:24px">8</div><div style="aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:24px">9</div><div style="aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:24px">*</div><div style="aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:24px">0</div><div style="aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:24px">#</div></div><div style="width:60px;height:60px;border-radius:50%;background:#34C759;margin:20px auto;display:flex;align-items:center;justify-content:center"><svg width="30" height="30" viewBox="0 0 24 24" fill="#fff"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg></div></div>',mail:h('Correo','✕')+'<div class="win-c"><div class="not-l"><div class="not-e"><div class="not-et">Asunto importante</div><div class="not-ed">De: juan@ejemplo.com<br>Reunión mañana a las 10</div></div><div class="not-e"><div class="not-et">Oferta especial</div><div class="not-ed">De: ofertas@tienda.com<br>50% de descuento</div></div><div class="not-e"><div class="not-et">Factura disponible</div><div class="not-ed">De: servicios@empresa.com<br>Tu factura del mes</div></div></div></div>',music:h('Música','✕')+'<div class="win-c"><div class="mus-p"><div class="alb">🎵</div><div class="mus-t"><div class="mus-tt">Canción Favorita</div><div class="mus-ar">Artista Desconocido</div></div><div class="mus-c"><button class="mus-btn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button><button class="mus-btn p" onclick="this.classList.toggle(\'a\')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button><button class="mus-btn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button></div><div style="width:100%;max-width:300px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin-top:20px"><div style="height:100%;width:35%;background:var(--p);border-radius:2px"></div></div></div></div>',photos:h('Fotos','✕')+'<div class="win-c"><div class="gal">'+Array(12).fill(0).map((_,i)=>`<div class="gal-i" style="background:hsl(${i*30},60%,50%)"></div>`).join('')+'</div></div>',weather:h('Clima','✕')+'<div class="win-c"><div class="we-h"><div class="we-t">24°</div><div class="we-d">Parcialmente nublado</div></div><div class="we-g"><div class="we-c"><div class="we-l">Humedad</div><div class="we-v">65%</div></div><div class="we-c"><div class="we-l">Viento</div><div class="we-v">12 km/h</div></div><div class="we-c"><div class="we-l">UV</div><div class="we-v">Alto</div></div><div class="we-c"><div class="we-l">Presión</div><div class="we-v">1013</div></div></div></div>',browser:h('Navegador','✕')+'<div class="win-c"><div class="bro"><input class="bro-i" placeholder="Buscar o escribir URL" value="google.com"><div class="bro-b">⌕</div></div><div class="bro-c"><div class="bro-lg">G</div><div style="font-size:20px;font-weight:600;color:#4285f4;margin-bottom:10px">Google</div><div style="color:#666">Búsqueda rápida</div></div></div>',clock:h('Reloj','✕')+'<div class="win-c"><div class="cl-d"><div class="cl-t" id="clt">12:00:00</div><div class="cl-da">Lunes 1 de enero</div></div><div class="cl-l"><div class="cl-a"><div><div class="cl-at">07:00</div><div class="cl-al">Despertador</div></div><div class="tog a"></div></div><div class="cl-a"><div><div class="cl-at">08:30</div><div class="cl-al">Trabajo</div></div><div class="tog"></div></div></div></div>',calc:h('Calculadora','✕')+'<div class="win-c"><div class="calc-d" id="cd">0</div><div class="calc-g"><button class="calc-b f" onclick="cc(\'C\')">C</button><button class="calc-b f" onclick="cc(\'±\')">±</button><button class="calc-b f" onclick="cc(\'%\')">%</button><button class="calc-b o" onclick="cc(\'/\')">÷</button><button class="calc-b" onclick="cc(\'7\')">7</button><button class="calc-b" onclick="cc(\'8\')">8</button><button class="calc-b" onclick="cc(\'9\')">9</button><button class="calc-b o" onclick="cc(\'*\')">×</button><button class="calc-b" onclick="cc(\'4\')">4</button><button class="calc-b" onclick="cc(\'5\')">5</button><button class="calc-b" onclick="cc(\'6\')">6</button><button class="calc-b o" onclick="cc(\'-\')">−</button><button class="calc-b" onclick="cc(\'1\')">1</button><button class="calc-b" onclick="cc(\'2\')">2</button><button class="calc-b" onclick="cc(\'3\')">3</button><button class="calc-b o" onclick="cc(\'+\')">+</button><button class="calc-b z" onclick="cc(\'0\')">0</button><button class="calc-b" onclick="cc(\'.\')">.</button><button class="calc-b o" onclick="cc(\'=\')">=</button></div></div>',files:h('Archivos','✕')+'<div class="win-c"><div class="fil"><div class="fil-i"><div class="fil-ic" style="background:#007AFF">📄</div><div class="fil-n"><div class="fil-t">Documento.pdf</div><div class="fil-m">2.5 MB • Hoy</div></div></div><div class="fil-i"><div class="fil-ic" style="background:#34C759">📷</div><div class="fil-n"><div class="fil-t">Foto.jpg</div><div class="fil-m">1.8 MB • Ayer</div></div></div><div class="fil-i"><div class="fil-ic" style="background:#FF9500">🎵</div><div class="fil-n"><div class="fil-t">Musica.mp3</div><div class="fil-m">4.2 MB • Semana pasada</div></div></div><div class="fil-i"><div class="fil-ic" style="background:#5856D6">📁</div><div class="fil-n"><div class="fil-t">Carpeta</div><div class="fil-m">12 items • 2023</div></div></div></div></div>',notes:h('Notas','✕')+'<div class="win-c"><div class="not-l"><div class="not-e" onclick="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'"><div class="not-et">Lista de compras</div><div class="not-ed">• Leche<br>• Pan<br>• Huevos</div></div><div style="display:none;flex-direction:column;height:100%"><input style="background:transparent;border:none;font-size:20px;font-weight:700;color:var(--t);margin-bottom:15px;outline:none" value="Lista de compras"><textarea style="flex:1;background:transparent;border:none;color:var(--t);resize:none;outline:none;font-family:inherit;font-size:16px;line-height:1.6">• Leche\n• Pan\n• Huevos</textarea></div><div class="not-e"><div class="not-et">Ideas de proyecto</div><div class="not-ed">Nueva app de productividad...</div></div></div></div>',settings:h('Ajustes','✕')+'<div class="win-c"><div class="set-s"><div class="set-h">General</div><div class="set-l"><div class="set-i"><div class="set-lf"><div class="set-ic" style="background:#007AFF">✈</div><span>Modo Avión</span></div><div class="tog" onclick="this.classList.toggle(\'a\')"></div></div><div class="set-i"><div class="set-lf"><div class="set-ic" style="background:#34C759">📶</div><span>Wi-Fi</span></div><div class="set-v">NexusNet</div></div><div class="set-i"><div class="set-lf"><div class="set-ic" style="background:#5856D6">🔷</div><span>Bluetooth</span></div><div class="tog" onclick="this.classList.toggle(\'a\')"></div></div></div></div><div class="set-s"><div class="set-h">Apariencia</div><div class="set-l"><div class="set-i" onclick="td()"><div class="set-lf"><div class="set-ic" style="background:#1c1c1e">🌙</div><span>Modo Oscuro</span></div><div class="tog '+ (theme==='dark'?'a':'') +'" id="td"></div></div><div class="set-i"><div class="set-lf"><div class="set-ic" style="background:#FF9500">🔆</div><span>Brillo</span></div><div class="set-v">70%</div></div></div></div><div class="set-s"><div class="set-h">Sistema</div><div class="set-l"><div class="set-i"><div class="set-lf"><div class="set-ic" style="background:#FF3B30">🔔</div><span>Notificaciones</span></div></div><div class="set-i"><div class="set-lf"><div class="set-ic" style="background:#8E8E93">🔒</div><span>Privacidad</span></div></div></div></div></div>',messages:h('Mensajes','✕')+'<div class="win-c"><div class="not-l"><div class="not-e"><div class="not-et">Juan</div><div class="not-ed">¿Nos vemos mañana?</div></div><div class="not-e"><div class="not-et">María</div><div class="not-ed">Gracias por tu ayuda</div></div><div class="not-e"><div class="not-et">Pedro</div><div class="not-ed">Llego en 10 minutos</div></div></div></div>',calendar:h('Calendario','✕')+'<div class="win-c"><div style="text-align:center;padding:30px"><div style="font-size:48px;font-weight:300;margin-bottom:20px">Marzo 2026</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:10px;font-size:18px"><div style="color:var(--g)">L</div><div style="color:var(--g)">M</div><div style="color:var(--g)">X</div><div style="color:var(--g)">J</div><div style="color:var(--g)">V</div><div style="color:var(--g)">S</div><div style="color:var(--g)">D</div>'+Array(31).fill(0).map((_,i)=>`<div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:50%;background:${i===15?'var(--p)':'transparent'};color:${i===15?'#fff':'inherit'}">${i+1}</div>`).join('')+'</div></div></div>',maps:h('Mapas','✕')+'<div class="win-c"><div style="height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px"><div style="width:150px;height:150px;background:linear-gradient(135deg,#34C759,#30B350);border-radius:30px;display:flex;align-items:center;justify-content:center;font-size:60px">🗺</div><div style="font-size:20px;font-weight:600">Mapas Nexus</div><div style="color:var(--g)">Navegación GPS</div></div></div>'};return m[n]||m.phone};
-        let ce='';const cc=k=>{const d=$('cd');if(k==='C')ce='';else if(k==='=')try{ce=eval(ce).toString()}catch{ce='Error'}else if(k==='±')ce=ce.startsWith('-')?ce.slice(1):'-'+ce;else if(k!=='=')ce+=k;d.textContent=ce||'0'};
-        const t=(el,type)=>{el.classList.toggle('a');showToast(`${type} ${el.classList.contains('a')?'activado':'desactivado'}`)};
-        const td=()=>{theme=theme==='dark'?'light':'dark';document.body.setAttribute('data-theme',theme);const t=$('td');if(t)t.classList.toggle('a');showToast(`Modo ${theme==='dark'?'oscuro':'claro'} activado`)};
-        const showToast=m=>{const t=$('toast');t.textContent=m;t.classList.add('s');setTimeout(()=>t.classList.remove('s'),2000)};
-        const upSw=()=>{$('swc').innerHTML=openApps.map((a,i)=>`<div class="card ${i===openApps.length-1?'a':''}" onclick="o('${a}');sw()"><div class="card-v">${a[0].toUpperCase()}</div></div>`).join('')};
-        const sw=()=>{$('sw').classList.toggle('o')};
-        const gestures=()=>{let sy,my;const s=e=>{sy=e.touches?e.touches[0].clientY:e.clientY;my=sy},m=e=>{my=e.touches?e.touches[0].clientY:e.clientY;const d=my-sy;if(d>50&&sy<100){$('cc').classList.add('o')}else if(d>50&&sy<150){$('nc').classList.add('o')}},en=e=>{const d=my-sy;if(d<-100&&document.querySelector('.win.a')){c(current)}else if(d>100&&$('lock').style.display==='none'&&!$('cc').classList.contains('o')&&!$('nc').classList.contains('o')){sw()}};document.addEventListener('touchstart',s);document.addEventListener('touchmove',m);document.addEventListener('touchend',en);document.addEventListener('mousedown',s);document.addEventListener('mousemove',m);document.addEventListener('mouseup',en)};
-        $('lock').addEventListener('touchstart',unlock);$('lock').addEventListener('mousedown',unlock);
-        document.addEventListener('click',e=>{if(e.target.closest('.win')||e.target.closest('.dock')||e.target.closest('.app')||e.target.closest('.cc')||e.target.closest('.nc'))return;$('cc').classList.remove('o');$('nc').classList.remove('o')});
-        const notSwipe=()=>{$$(' .not').forEach(n=>{let sx,ex;n.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;n.classList.add('swiping')});n.addEventListener('touchmove',e=>{ex=e.touches[0].clientX;const d=ex-sx;n.style.transform=`translateX(${d}px)`;if(d>100)n.classList.add('d')});n.addEventListener('touchend',()=>{n.classList.remove('swiping');if(n.classList.contains('d')){setTimeout(()=>n.remove(),300)}else{n.style.transform=''}})})};
-        time();boot();swipe();gestures();notSwipe();
-    </script>
-</body>
-</html> 
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>PhantomOS Universal</title>
+<style>
+
+:root{
+--primary:#007AFF;
+--bg-dark:#000;
+--safe-top:env(safe-area-inset-top, 0px);
+--safe-bottom:env(safe-area-inset-bottom, 0px);
+--gesture-area:20px;
+}
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+-webkit-tap-highlight-color:transparent;
+}
+
+html, body{
+background:#000;
+height:100%;
+overflow:hidden;
+touch-action:none;
+}
+
+/* SELECTOR DE DISPOSITIVO */
+#device-selector{
+position:fixed;
+inset:0;
+background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+gap:30px;
+z-index:10000;
+transition:opacity 0.5s, transform 0.5s;
+}
+
+#device-selector.hidden{
+opacity:0;
+pointer-events:none;
+transform:scale(1.1);
+}
+
+.selector-title{
+font-size:32px;
+font-weight:700;
+color:white;
+text-align:center;
+text-shadow:0 4px 20px rgba(0,0,0,0.3);
+}
+
+.device-options{
+display:flex;
+gap:20px;
+flex-wrap:wrap;
+justify-content:center;
+}
+
+.device-btn{
+width:140px;
+height:160px;
+background:rgba(255,255,255,0.15);
+backdrop-filter:blur(20px);
+border-radius:24px;
+border:2px solid rgba(255,255,255,0.2);
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+gap:15px;
+cursor:pointer;
+transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+color:white;
+}
+
+.device-btn:hover{
+transform:translateY(-5px) scale(1.05);
+background:rgba(255,255,255,0.25);
+}
+
+.device-btn:active{
+transform:scale(0.95);
+}
+
+.device-icon{
+width:60px;
+height:60px;
+fill:white;
+}
+
+.device-label{
+font-size:16px;
+font-weight:600;
+}
+
+/* CONTENEDOR PRINCIPAL */
+#os-container{
+position:fixed;
+inset:0;
+opacity:0;
+pointer-events:none;
+transition:opacity 0.5s;
+}
+
+#os-container.active{
+opacity:1;
+pointer-events:auto;
+}
+
+/* MODO CELULAR */
+body.mobile-mode #os-container{
+padding-top:var(--safe-top);
+padding-bottom:calc(var(--safe-bottom) + var(--gesture-area));
+}
+
+body.mobile-mode .statusbar{
+height:44px;
+padding-top:max(10px, var(--safe-top));
+}
+
+body.mobile-mode .gesture-bar{
+position:fixed;
+bottom:0;
+left:50%;
+transform:translateX(-50%);
+width:120px;
+height:5px;
+background:rgba(255,255,255,0.3);
+border-radius:3px;
+margin-bottom:max(8px, var(--safe-bottom));
+z-index:9999;
+}
+
+/* MODO LAPTOP */
+body.desktop-mode #os-container{
+padding:20px;
+background:#1a1a1a;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+body.desktop-mode .device-frame{
+width:100%;
+max-width:1400px;
+height:100%;
+max-height:900px;
+background:linear-gradient(180deg, #1e3c72, #2a5298);
+border-radius:20px;
+box-shadow:0 25px 80px rgba(0,0,0,0.6);
+overflow:hidden;
+position:relative;
+}
+
+body.desktop-mode .gesture-bar{
+display:none;
+}
+
+/* LOCK SCREEN */
+#lockscreen{
+position:absolute;
+inset:0;
+background:linear-gradient(180deg, #000428, #004e92);
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+transform:translateY(0);
+transition:transform 0.6s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.4s;
+z-index:1000;
+contain:layout style paint;
+}
+
+#lockscreen.unlocked{
+transform:translateY(-100%);
+opacity:0;
+}
+
+#time{
+font-size:clamp(60px, 12vw, 90px);
+font-weight:200;
+letter-spacing:-3px;
+color:white;
+text-shadow:0 4px 30px rgba(0,0,0,0.4);
+}
+
+#date{
+font-size:18px;
+color:rgba(255,255,255,0.8);
+margin-top:10px;
+font-weight:400;
+}
+
+#unlock-hint{
+position:absolute;
+bottom:80px;
+color:rgba(255,255,255,0.7);
+font-size:14px;
+animation:bounce 2s infinite;
+display:flex;
+flex-direction:column;
+align-items:center;
+gap:10px;
+}
+
+@keyframes bounce{
+0%, 100%{transform:translateY(0); opacity:0.5;}
+50%{transform:translateY(-10px); opacity:1;}
+}
+
+.swipe-icon{
+width:30px;
+height:30px;
+fill:white;
+opacity:0.8;
+}
+
+/* HOME SCREEN */
+#home{
+position:absolute;
+inset:0;
+display:flex;
+flex-direction:column;
+opacity:0;
+transform:scale(1.1);
+transition:opacity 0.4s ease, transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+contain:layout style paint;
+z-index:100;
+}
+
+#home.active{
+opacity:1;
+transform:scale(1);
+}
+
+/* STATUS BAR */
+.statusbar{
+height:40px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:0 25px;
+font-size:14px;
+font-weight:600;
+color:white;
+background:linear-gradient(180deg, rgba(0,0,0,0.3), transparent);
+position:relative;
+z-index:101;
+}
+
+.status-left, .status-right{
+display:flex;
+align-items:center;
+gap:8px;
+}
+
+.status-icon{
+width:18px;
+height:18px;
+fill:white;
+}
+
+/* ICON GRID */
+.icons{
+flex:1;
+display:grid;
+grid-template-columns:repeat(4, 1fr);
+gap:clamp(15px, 3vw, 25px);
+padding:clamp(20px, 4vw, 40px);
+align-content:start;
+overflow-y:auto;
+contain:layout;
+}
+
+.app{
+display:flex;
+flex-direction:column;
+align-items:center;
+gap:8px;
+cursor:pointer;
+transition:transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+will-change:transform;
+}
+
+.app:active{
+transform:scale(0.88);
+}
+
+.icon-wrapper{
+width:clamp(55px, 13vw, 70px);
+height:clamp(55px, 13vw, 70px);
+border-radius:22%;
+display:flex;
+align-items:center;
+justify-content:center;
+position:relative;
+box-shadow:0 8px 25px rgba(0,0,0,0.3);
+transition:transform 0.2s, box-shadow 0.2s;
+overflow:hidden;
+}
+
+.app:hover .icon-wrapper{
+transform:translateY(-3px) scale(1.05);
+box-shadow:0 12px 35px rgba(0,0,0,0.4);
+}
+
+.icon-wrapper::before{
+content:'';
+position:absolute;
+inset:0;
+background:linear-gradient(135deg, rgba(255,255,255,0.4), transparent);
+opacity:0.6;
+}
+
+.app-icon{
+width:55%;
+height:55%;
+fill:white;
+position:relative;
+z-index:1;
+filter:drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+.app-label{
+font-size:12px;
+font-weight:500;
+color:white;
+text-shadow:0 1px 3px rgba(0,0,0,0.5);
+max-width:80px;
+overflow:hidden;
+text-overflow:ellipsis;
+white-space:nowrap;
+}
+
+/* Icon Colors */
+.icon-settings{background:linear-gradient(135deg, #8e8e93, #636366);}
+.icon-camera{background:linear-gradient(135deg, #ff3b30, #ff6b6b);}
+.icon-gallery{background:linear-gradient(135deg, #5856d6, #af52de);}
+.icon-music{background:linear-gradient(135deg, #ff2d55, #ff9500);}
+.icon-browser{background:linear-gradient(135deg, #007aff, #5ac8fa);}
+.icon-calc{background:linear-gradient(135deg, #ff9500, #ffcc00);}
+.icon-weather{background:linear-gradient(135deg, #5ac8fa, #34c759);}
+.icon-notes{background:linear-gradient(135deg, #ffcc00, #ff9500);}
+.icon-phone{background:linear-gradient(135deg, #34c759, #30d158);}
+.icon-messages{background:linear-gradient(135deg, #34c759, #a8e063);}
+
+/* DOCK */
+.dock{
+margin:0 15px 15px;
+padding:15px;
+background:rgba(255,255,255,0.15);
+backdrop-filter:blur(25px) saturate(180%);
+-webkit-backdrop-filter:blur(25px) saturate(180%);
+border-radius:35px;
+display:flex;
+justify-content:space-around;
+align-items:center;
+gap:10px;
+contain:layout style;
+}
+
+.dock .icon-wrapper{
+width:55px;
+height:55px;
+border-radius:18px;
+}
+
+body.desktop-mode .dock{
+margin-bottom:25px;
+}
+
+/* APP WINDOWS */
+.window{
+position:absolute;
+inset:0;
+background:#f2f2f7;
+display:flex;
+flex-direction:column;
+transform:scale(0.9) translateY(100px);
+opacity:0;
+pointer-events:none;
+transition:transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s;
+contain:layout style paint;
+z-index:500;
+will-change:transform, opacity;
+border-radius:0;
+}
+
+body.desktop-mode .window{
+border-radius:20px;
+inset:10px;
+}
+
+.window.open{
+transform:scale(1) translateY(0);
+opacity:1;
+pointer-events:auto;
+}
+
+.window-header{
+height:50px;
+background:rgba(255,255,255,0.85);
+backdrop-filter:blur(20px);
+-webkit-backdrop-filter:blur(20px);
+display:flex;
+align-items:center;
+padding:0 15px;
+border-bottom:1px solid rgba(0,0,0,0.08);
+position:relative;
+}
+
+.window-title{
+font-size:17px;
+font-weight:600;
+flex:1;
+text-align:center;
+color:#000;
+}
+
+.window-controls{
+display:flex;
+gap:10px;
+position:absolute;
+left:15px;
+}
+
+.control-btn{
+width:12px;
+height:12px;
+border-radius:50%;
+border:none;
+cursor:pointer;
+transition:transform 0.1s;
+}
+
+.control-btn:hover{transform:scale(1.2);}
+.control-close{background:#ff5f57;}
+.control-min{background:#ffbd2e;}
+.control-max{background:#28c840;}
+
+.close-mobile{
+position:absolute;
+right:15px;
+width:30px;
+height:30px;
+display:flex;
+align-items:center;
+justify-content:center;
+cursor:pointer;
+border-radius:50%;
+transition:background 0.2s;
+}
+
+.close-mobile:hover{background:rgba(0,0,0,0.1);}
+.close-mobile svg{width:16px; height:16px; fill:#000;}
+
+body.mobile-mode .window-controls{display:none;}
+body.desktop-mode .close-mobile{display:none;}
+
+.window-content{
+flex:1;
+overflow-y:auto;
+-webkit-overflow-scrolling:touch;
+background:#f2f2f7;
+}
+
+/* NOTIFICATIONS */
+#notif{
+position:fixed;
+top:0;
+left:0;
+right:0;
+background:rgba(30,30,30,0.95);
+backdrop-filter:blur(30px);
+-webkit-backdrop-filter:blur(30px);
+transform:translateY(-120%);
+transition:transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+padding:50px 20px 20px;
+border-radius:0 0 30px 30px;
+z-index:900;
+will-change:transform;
+contain:layout style paint;
+max-height:50vh;
+}
+
+body.desktop-mode #notif{
+left:50%;
+right:auto;
+width:400px;
+transform:translate(-50%, -120%);
+border-radius:0 0 20px 20px;
+}
+
+body.desktop-mode #notif.show{
+transform:translate(-50%, 0);
+}
+
+#notif.show{
+transform:translateY(0);
+}
+
+.notif-header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:20px;
+color:white;
+}
+
+.notif-title{
+font-size:20px;
+font-weight:700;
+}
+
+.notif-clear{
+font-size:14px;
+color:var(--primary);
+cursor:pointer;
+}
+
+.notif-item{
+background:rgba(255,255,255,0.1);
+padding:15px;
+border-radius:16px;
+margin-bottom:12px;
+display:flex;
+gap:12px;
+align-items:flex-start;
+animation:slideIn 0.3s ease;
+}
+
+@keyframes slideIn{
+from{opacity:0; transform:translateX(-20px);}
+to{opacity:1; transform:translateX(0);}
+}
+
+.notif-icon{
+width:40px;
+height:40px;
+border-radius:10px;
+display:flex;
+align-items:center;
+justify-content:center;
+flex-shrink:0;
+}
+
+.notif-icon svg{width:24px; height:24px; fill:white;}
+
+.notif-content{flex:1;}
+.notif-app{
+font-size:13px;
+font-weight:600;
+color:rgba(255,255,255,0.7);
+margin-bottom:4px;
+}
+.notif-text{
+font-size:15px;
+color:white;
+line-height:1.3;
+}
+.notif-time{
+font-size:12px;
+color:rgba(255,255,255,0.5);
+margin-top:4px;
+}
+
+/* CONTROL CENTER */
+#control{
+position:fixed;
+bottom:0;
+left:0;
+right:0;
+background:rgba(20,20,20,0.95);
+backdrop-filter:blur(30px);
+-webkit-backdrop-filter:blur(30px);
+transform:translateY(110%);
+transition:transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+padding:25px;
+border-radius:30px 30px 0 0;
+z-index:900;
+will-change:transform;
+contain:layout style paint;
+}
+
+body.desktop-mode #control{
+left:50%;
+right:auto;
+width:400px;
+transform:translate(-50%, 110%);
+border-radius:20px 20px 0 0;
+}
+
+body.desktop-mode #control.show{
+transform:translate(-50%, 0);
+}
+
+#control.show{
+transform:translateY(0);
+}
+
+.control-grid{
+display:grid;
+grid-template-columns:repeat(3, 1fr);
+gap:15px;
+margin-bottom:20px;
+}
+
+.control-toggle{
+aspect-ratio:1;
+background:rgba(255,255,255,0.1);
+border-radius:18px;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+gap:8px;
+cursor:pointer;
+transition:all 0.2s;
+border:1px solid rgba(255,255,255,0.05);
+position:relative;
+overflow:hidden;
+}
+
+.control-toggle:active{transform:scale(0.92);}
+
+.control-toggle.active{
+background:var(--primary);
+}
+
+.control-toggle svg{
+width:26px;
+height:26px;
+fill:white;
+}
+
+.toggle-label{
+font-size:11px;
+font-weight:500;
+color:white;
+}
+
+.control-slider{
+background:rgba(255,255,255,0.1);
+border-radius:20px;
+padding:15px;
+display:flex;
+align-items:center;
+gap:15px;
+}
+
+.control-slider svg{
+width:24px;
+height:24px;
+fill:white;
+flex-shrink:0;
+}
+
+.slider-track{
+flex:1;
+height:6px;
+background:rgba(255,255,255,0.2);
+border-radius:3px;
+position:relative;
+}
+
+.slider-fill{
+position:absolute;
+left:0;
+top:0;
+height:100%;
+width:70%;
+background:white;
+border-radius:3px;
+}
+
+/* GESTURE INDICATORS */
+.gesture-hint{
+position:fixed;
+top:0;
+left:0;
+right:0;
+height:30px;
+z-index:800;
+cursor:pointer;
+}
+
+.gesture-hint-bottom{
+position:fixed;
+bottom:0;
+left:0;
+right:0;
+height:40px;
+z-index:800;
+cursor:pointer;
+}
+
+body.desktop-mode .gesture-hint,
+body.desktop-mode .gesture-hint-bottom{
+display:none;
+}
+
+/* Responsive */
+@media (max-width:380px){
+.icons{grid-template-columns:repeat(4, 1fr); gap:12px; padding:15px;}
+.app-label{font-size:11px;}
+}
+
+@media (min-width:768px) and (max-width:1024px){
+.icons{grid-template-columns:repeat(6, 1fr);}
+}
+
+/* Animaciones de entrada */
+@keyframes fadeInUp{
+from{opacity:0; transform:translateY(30px);}
+to{opacity:1; transform:translateY(0);}
+}
+
+.app{animation:fadeInUp 0.5s ease backwards;}
+.app:nth-child(1){animation-delay:0.05s;}
+.app:nth-child(2){animation-delay:0.1s;}
+.app:nth-child(3){animation-delay:0.15s;}
+.app:nth-child(4){animation-delay:0.2s;}
+.app:nth-child(5){animation-delay:0.25s;}
+.app:nth-child(6){animation-delay:0.3s;}
+.app:nth-child(7){animation-delay:0.35s;}
+.app:nth-child(8){animation-delay:0.4s;}
+
+</style>
+<base target="_blank">
+</head>
+<body>
+
+<!-- SELECTOR DE DISPOSITIVO -->
+<div id="device-selector">
+  <div class="selector-title">Selecciona tu dispositivo</div>
+  <div class="device-options">
+    <button class="device-btn" onclick="selectDevice('mobile')">
+      <svg class="device-icon" viewBox="0 0 24 24">
+        <rect x="6" y="2" width="12" height="20" rx="3" ry="3" fill="none" stroke="currentColor" stroke-width="2"/>
+        <line x1="12" y1="18" x2="12" y2="18.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="device-label">Celular</span>
+    </button>
+    <button class="device-btn" onclick="selectDevice('desktop')">
+      <svg class="device-icon" viewBox="0 0 24 24">
+        <rect x="3" y="4" width="18" height="12" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/>
+        <line x1="9" y1="20" x2="15" y2="20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <line x1="12" y1="16" x2="12" y2="20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="device-label">Laptop</span>
+    </button>
+  </div>
+</div>
+
+<!-- CONTENEDOR OS -->
+<div id="os-container">
+  
+  <!-- GESTURE AREAS (Mobile only) -->
+  <div class="gesture-hint" onclick="toggleNotif()"></div>
+  <div class="gesture-hint-bottom" onclick="toggleControl()"></div>
+  <div class="gesture-bar"></div>
+
+  <div class="device-frame">
+    <!-- LOCKSCREEN -->
+    <div id="lockscreen">
+      <div id="time">00:00</div>
+      <div id="date">Lunes, 16 de marzo</div>
+      <div id="unlock-hint">
+        <span>Desliza hacia arriba para desbloquear</span>
+        <svg class="swipe-icon" viewBox="0 0 24 24">
+          <path d="M12 5v14M5 12l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- HOME -->
+    <div id="home">
+      <div class="statusbar">
+        <div class="status-left">
+          <span id="statusTime">00:00</span>
+        </div>
+        <div class="status-right">
+          <svg class="status-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+          <svg class="status-icon" viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+        </div>
+      </div>
+
+      <div class="icons">
+        <!-- Settings -->
+        <div class="app" onclick="openApp('settings')">
+          <div class="icon-wrapper icon-settings">
+            <svg class="app-icon" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="3" fill="none" stroke="white" stroke-width="2"/>
+              <path d="M12 1v6m0 6v6m4.22-10.22l4.24-4.24M6.34 6.34L2.1 2.1m17.8 17.8l-4.24-4.24M6.34 17.66l-4.24 4.24M23 12h-6m-6 0H1m20.24 4.24l-4.24-4.24M6.34 17.66l-4.24 4.24" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <span class="app-label">Ajustes</span>
+        </div>
+
+        <!-- Camera -->
+        <div class="app" onclick="openApp('camera')">
+          <div class="icon-wrapper icon-camera">
+            <svg class="app-icon" viewBox="0 0 24 24">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="12" cy="13" r="4" fill="none" stroke="white" stroke-width="2"/>
+            </svg>
+          </div>
+          <span class="app-label">Cámara</span>
+        </div>
+
+        <!-- Gallery -->
+        <div class="app" onclick="openApp('gallery')">
+          <div class="icon-wrapper icon-gallery">
+            <svg class="app-icon" viewBox="0 0 24 24">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" fill="none" stroke="white" stroke-width="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5" fill="white"/>
+              <polyline points="21 15 16 10 5 21" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <span class="app-label">Galería</span>
+        </div>
+
+        <!-- Music -->
+        <div class="app" onclick="openApp('music')">
+          <div class="icon-wrapper icon-music">
+            <svg class="app-icon" viewBox="0 0 24 24">
+              <path d="M9 18V5l12-2v13" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="6" cy="18" r="3" fill="none" stroke="white" stroke-width="2"/>
+              <circle cx="18" cy="16" r="3" fill="none" stroke="white" stroke-width="2"/>
+            </svg>
+          </div>
+          <span class="app-label">Música</span>
+        </div>
+
+        <!-- Browser -->
+        <div class="app" onclick="openApp('browser')">
+          <div class="icon-wrapper icon-browser">
+            <svg class="app-icon" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" fill="none" stroke="white" stroke-width="2"/>
+              <line x1="2" y1="12" x2="22" y2="12" stroke="white" stroke-width="2"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" fill="none" stroke="white" stroke-width="2"/>
+            </svg>
+          </div>
+          <span class="app-label">Safari</span>
+        </div>
+
+        <!-- Calculator -->
+        <div class="app" onclick="openApp('calc')">
+          <div class="icon-wrapper icon-calc">
+            <svg class="app-icon" viewBox="0 0 24 24">
+              <rect x="4" y="2" width="16" height="20" rx="2" fill="none" stroke="white" stroke-width="2"/>
+              <line x1="8" y1="6" x2="16" y2="6" stroke="white" stroke-width="2"/>
+              <line x1="8" y1="10" x2="16" y2="10" stroke="white" stroke-width="2"/>
+              <line x1="8" y1="14" x2="16" y2="14" stroke="white" stroke-width="2"/>
+              <line x1="8" y1="18" x2="16" y2="18" stroke="white" stroke-width="2"/>
+            </svg>
+          </div>
+          <span class="app-label">Calc</span>
+        </div>
+
+        <!-- Weather -->
+        <div class="app" onclick="openApp('weather')">
+          <div class="icon-wrapper icon-weather">
+            <svg class="app-icon" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="5" fill="none" stroke="white" stroke-width="2"/>
+              <line x1="12" y1="1" x2="12" y2="3" stroke="white" stroke-width="2"/>
+              <line x1="12" y1="21" x2="12" y2="23" stroke="white" stroke-width="2"/>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="white" stroke-width="2"/>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="white" stroke-width="2"/>
+              <line x1="1" y1="12" x2="3" y2="12" stroke="white" stroke-width="2"/>
+              <line x1="21" y1="12" x2="23" y2="12" stroke="white" stroke-width="2"/>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="white" stroke-width="2"/>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="white" stroke-width="2"/>
+            </svg>
+          </div>
+          <span class="app-label">Clima</span>
+        </div>
+
+        <!-- Notes -->
+        <div class="app" onclick="openApp('notes')">
+          <div class="icon-wrapper icon-notes">
+            <svg class="app-icon" viewBox="0 0 24 24">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="none" stroke="white" stroke-width="2"/>
+              <polyline points="14 2 14 8 20 8" fill="none" stroke="white" stroke-width="2"/>
+              <line x1="16" y1="13" x2="8" y2="13" stroke="white" stroke-width="2"/>
+              <line x1="16" y1="17" x2="8" y2="17" stroke="white" stroke-width="2"/>
+              <polyline points="10 9 9 9 8 9" fill="none" stroke="white" stroke-width="2"/>
+            </svg>
+          </div>
+          <span class="app-label">Notas</span>
+        </div>
+      </div>
+
+      <!-- DOCK -->
+      <div class="dock">
+        <div class="icon-wrapper icon-phone" onclick="openApp('phone')">
+          <svg class="app-icon" viewBox="0 0 24 24">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" fill="none" stroke="white" stroke-width="2"/>
+          </svg>
+        </div>
+        <div class="icon-wrapper icon-messages" onclick="openApp('messages')">
+          <svg class="app-icon" viewBox="0 0 24 24">
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" fill="none" stroke="white" stroke-width="2"/>
+          </svg>
+        </div>
+        <div class="icon-wrapper icon-browser" onclick="openApp('browser')">
+          <svg class="app-icon" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" fill="none" stroke="white" stroke-width="2"/>
+            <line x1="2" y1="12" x2="22" y2="12" stroke="white" stroke-width="2"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" fill="none" stroke="white" stroke-width="2"/>
+          </svg>
+        </div>
+        <div class="icon-wrapper icon-camera" onclick="openApp('camera')">
+          <svg class="app-icon" viewBox="0 0 24 24">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" fill="none" stroke="white" stroke-width="2"/>
+            <circle cx="12" cy="13" r="4" fill="none" stroke="white" stroke-width="2"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- APP: Settings -->
+    <div id="settings" class="window">
+      <div class="window-header">
+        <div class="window-controls">
+          <button class="control-btn control-close" onclick="closeApp()"></button>
+          <button class="control-btn control-min" onclick="closeApp()"></button>
+          <button class="control-btn control-max"></button>
+        </div>
+        <div class="window-title">Ajustes</div>
+        <div class="close-mobile" onclick="closeApp()">
+          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+      </div>
+      <div class="window-content">
+        <div style="padding:20px; max-width:600px; margin:0 auto;">
+          <div style="background:white; border-radius:12px; overflow:hidden; margin-bottom:20px;">
+            <div class="settings-row" style="padding:16px; border-bottom:1px solid #e5e5e5; display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:30px; height:30px; background:#007AFF; border-radius:8px; display:flex; align-items:center; justify-content:center;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/></svg>
+                </div>
+                <span>Modo Avión</span>
+              </div>
+              <div style="width:50px; height:30px; background:#ccc; border-radius:15px; position:relative; transition:0.3s;" onclick="this.style.background=this.style.background=='rgb(0, 122, 255)'?'#ccc':'#007AFF'; this.children[0].style.transform=this.children[0].style.transform=='translateX(20px)'?'translateX(0)':'translateX(20px)'">
+                <div style="width:26px; height:26px; background:white; border-radius:50%; position:absolute; top:2px; left:2px; transition:0.3s; box-shadow:0 2px 4px rgba(0,0,0,0.2);"></div>
+              </div>
+            </div>
+            <div class="settings-row" style="padding:16px; border-bottom:1px solid #e5e5e5; display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:30px; height:30px; background:#007AFF; border-radius:8px; display:flex; align-items:center; justify-content:center;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </div>
+                <span>Wi-Fi</span>
+              </div>
+              <span style="color:#8e8e93;">PhantomNet</span>
+            </div>
+            <div class="settings-row" style="padding:16px; display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:30px; height:30px; background:#007AFF; border-radius:8px; display:flex; align-items:center; justify-content:center;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M6.5 6.5l11 11M12 2a10 10 0 0 1 10 10M12 22a10 10 0 0 1-10-10" fill="none" stroke="white" stroke-width="2"/></svg>
+                </div>
+                <span>Bluetooth</span>
+              </div>
+              <span style="color:#8e8e93;">Activado</span>
+            </div>
+          </div>
+          
+          <div style="background:white; border-radius:12px; overflow:hidden;">
+            <div class="settings-row" style="padding:16px; display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:30px; height:30px; background:#8e8e93; border-radius:8px; display:flex; align-items:center; justify-content:center;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01" stroke="white" stroke-width="2"/></svg>
+                </div>
+                <span>Acerca de</span>
+              </div>
+              <span style="color:#8e8e93;">PhantomOS 3.0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- APP: Camera -->
+    <div id="camera" class="window">
+      <div class="window-header" style="background:rgba(0,0,0,0.5); color:white; border:none;">
+        <div class="window-controls">
+          <button class="control-btn control-close" onclick="closeApp()"></button>
+          <button class="control-btn control-min" onclick="closeApp()"></button>
+          <button class="control-btn control-max"></button>
+        </div>
+        <div class="window-title" style="color:white;">Cámara</div>
+        <div class="close-mobile" onclick="closeApp()" style="color:white;">
+          <svg viewBox="0 0 24 24" fill="white"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="white" stroke-width="2"/></svg>
+        </div>
+      </div>
+      <div style="flex:1; background:linear-gradient(45deg, #0f0c29, #302b63, #24243e); position:relative; overflow:hidden;">
+        <div style="position:absolute; inset:0; background:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><rect fill=%22%23000%22 width=%22100%22 height=%22100%22/><circle cx=%2250%22 cy=%2250%22 r=%2240%22 fill=%22none%22 stroke=%22%23333%22 stroke-width=%222%22/></svg>'); opacity:0.3;"></div>
+        <div style="position:absolute; bottom:40px; left:50%; transform:translateX(-50%); width:70px; height:70px; border:4px solid white; border-radius:50%; box-shadow:0 0 0 4px rgba(0,0,0,0.3); cursor:pointer; transition:0.2s;" onclick="this.style.transform='translateX(-50%) scale(0.9)'; setTimeout(()=>this.style.transform='translateX(-50%) scale(1)', 200)">
+          <div style="width:100%; height:100%; background:white; border-radius:50%; transform:scale(0.85);"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- APP: Gallery -->
+    <div id="gallery" class="window">
+      <div class="window-header">
+        <div class="window-controls">
+          <button class="control-btn control-close" onclick="closeApp()"></button>
+          <button class="control-btn control-min" onclick="closeApp()"></button>
+          <button class="control-btn control-max"></button>
+        </div>
+        <div class="window-title">Galería</div>
+        <div class="close-mobile" onclick="closeApp()">
+          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        </div>
+      </div>
+      <div class="window-content" style="padding:3px;">
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:3px;">
+          <div style="aspect-ratio:1; background:linear-gradient(135deg, #667eea, #764ba2); border-radius:4px; cursor:pointer; transition:0.2s;" onmouseover="this.style.transform='scale(0.98)'" onmouseout="this.style.transform='scale(1)'"></div>
+          <div style="aspect-ratio:1; background:linear-gradient(135deg, #f093fb, #f5576c); border-radius:4px;"></div>
+          <div style="aspect-ratio:1; background:linear-gradient(135deg, #4facfe, #00f2fe); border-radius:4px;"></div>
+          <div style="aspect-ratio:1; background:linear-gradient(135deg, #43e97b, #38f9d7); border-radius:4px;"></div>
+          <div style="aspect-ratio:1; background:linear-gradient(135deg, #fa709a, #fee140); border-radius:4px;"></div>
+          <div style="aspect-ratio:1; background:linear-gradient(135deg, #30cfd0, #330867); border-radius:4px;"></div>
+          <div style="aspect-ratio:1; background:linear-gradient(135deg, #a8edea, #fed6e3); border-radius:4px;"></div>
+          <div style="aspect-ratio:1; background:linear-gradient(135deg, #ff9a9e, #fecfef); border-radius:4px;"></div>
+          <div style="aspect-ratio:1; background:linear-gradient(135deg, #ffecd2, #fcb69f); border-radius:4px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- APP: Music -->
+    <div id="music" class="window">
+      <div class="window-header">
+        <div class="window-controls">
+          <button class="control-btn control-close" onclick="closeApp()"></button>
+          <button class="control-btn control-min" onclick="closeApp()"></button>
+          <button class="control-btn control-max"></button>
+        </div>
+        <div class="window-title">Música</div>
+        <div class="close-mobile" onclick="closeApp()">
+          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        </div>
+      </div>
+      <div class="window-content" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:30px; background:linear-gradient(180deg, #f2f2f7, #e5e5ea);">
+        <div style="width:min(280px, 60vw); height:min(280px, 60vw); background:linear-gradient(135deg, #667eea, #764ba2); border-radius:20px; box-shadow:0 20px 60px rgba(102,126,234,0.4); position:relative; overflow:hidden;">
+          <div style="position:absolute; inset:0; background:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><circle cx=%2250%22 cy=%2250%22 r=%2230%22 fill=%22none%22 stroke=%22rgba(255,255,255,0.2)%22 stroke-width=%222%22/><circle cx=%2250%22 cy=%2250%22 r=%2210%22 fill=%22white%22/></svg>');"></div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:24px; font-weight:700; margin-bottom:6px; color:#000;">Midnight City</div>
+          <div style="color:#8e8e93; font-size:16px;">M83 • Hurry Up, We're Dreaming</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:40px;">
+          <button style="background:none; border:none; font-size:28px; cursor:pointer; opacity:0.6; transition:0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">⏮</button>
+          <button style="width:65px; height:65px; background:#007AFF; border:none; border-radius:50%; color:white; font-size:24px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 15px rgba(0,122,255,0.4); transition:0.2s;" onclick="this.style.transform='scale(0.95)'; setTimeout(()=>this.style.transform='scale(1)', 150)">▶</button>
+          <button style="background:none; border:none; font-size:28px; cursor:pointer; opacity:0.6; transition:0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">⏭</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- APP: Browser -->
+    <div id="browser" class="window">
+      <div class="window-header">
+        <div class="window-controls">
+          <button class="control-btn control-close" onclick="closeApp()"></button>
+          <button class="control-btn control-min" onclick="closeApp()"></button>
+          <button class="control-btn control-max"></button>
+        </div>
+        <div class="window-title">Safari</div>
+        <div class="close-mobile" onclick="closeApp()">
+          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        </div>
+      </div>
+      <div style="background:#f2f2f7;">
+        <div style="padding:10px; display:flex; gap:10px; align-items:center;">
+          <button style="background:none; border:none; font-size:18px; opacity:0.5; cursor:pointer;">←</button>
+          <button style="background:none; border:none; font-size:18px; opacity:0.5; cursor:pointer;">→</button>
+          <button style="background:none; border:none; font-size:18px; opacity:0.5; cursor:pointer;">⟳</button>
+          <div style="flex:1; background:white; padding:8px 15px; border-radius:10px; font-size:15px; color:#333; box-shadow:0 1px 3px rgba(0,0,0,0.1); display:flex; align-items:center; gap:8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <span style="color:#8e8e93;">phantomos.com</span>
+          </div>
+        </div>
+        <div style="height:calc(100% - 60px); display:flex; align-items:center; justify-content:center; color:#8e8e93; flex-direction:column; gap:20px;">
+          <div style="font-size:80px; opacity:0.3;">🌐</div>
+          <div style="font-size:20px;">Página de inicio</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- APP: Calculator -->
+    <div id="calc" class="window">
+      <div class="window-header">
+        <div class="window-controls">
+          <button class="control-btn control-close" onclick="closeApp()"></button>
+          <button class="control-btn control-min" onclick="closeApp()"></button>
+          <button class="control-btn control-max"></button>
+        </div>
+        <div class="window-title">Calculadora</div>
+        <div class="close-mobile" onclick="closeApp()">
+          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        </div>
+      </div>
+      <div style="flex:1; background:black; display:flex; flex-direction:column;">
+        <div style="flex:1; display:flex; align-items:flex-end; justify-content:flex-end; padding:20px; font-size:64px; font-weight:300; color:white;" id="calc-display">0</div>
+        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; padding:12px;">
+          <button style="aspect-ratio:1; border-radius:50%; border:none; background:#a5a5a5; color:black; font-size:24px; font-weight:500; cursor:pointer; transition:0.1s;" onclick="updateCalc('C')" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">AC</button>
+          <button style="aspect-ratio:1; border-radius:50%; border:none; background:#a5a5a5; color:black; font-size:24px; cursor:pointer; transition:0.1s;" onclick="updateCalc('+/-')" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">+/-</button>
+          <button style="aspect-ratio:1; border-radius:50%; border:none; background:#a5a5a5; color:black; font-size:24px; cursor:pointer; transition:0.1s;" onclick="updateCalc('%')" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">%</button>
+          <button style="aspect-ratio:1; border-radius:50%; border:none; background:#ff9f0a; color:white; font-size:28px; cursor:pointer; transition:0.1s;" onclick="updateCalc('/')" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">÷</button>
+          
+          <button style="aspect-ratio:1; border-radius:50%; border:none; background:#333; color:white; font-size:28px; cursor:pointer; transition:0.1s;" onclick="updateCalc('7')" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">7</button>
+          <button style="aspect-ratio:1; border-radius:50%; border:none; background:#333; color:white; font-size:28px; cursor:pointer; transition:0.1s;" onclick="updateCalc('8')" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">8</button>
+          <button style="aspect-ratio:1; border-radius:50%; border:none; background:#333; color:white; font-size:28px; cursor:pointer; transition:0.1s;" onclick="updateCalc('9')" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">9</button>
+          <button style="aspect-ratio:1; border-radius:50%; border:none; background:#ff9f0a; color:white; font-size:28px; cursor:pointer; transition:0.1s;" onclick="updateCalc('*')" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">×</button>
+          
+          <button style="aspect-ratio:1; border-radius:50%; border:none; background:#333; color:white; font-size:28px; cursor:pointer; transition:0.1s;" onclick="updateCalc('4')" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">4</button>
+          <button style="aspect-ratio:1; border-radius:50%; border:none; background:#333; color:white; font-size:28px; cursor:pointer; transition:0.1s;" onclick="updateCalc('5')" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">5</button>
+          <button style="aspect-ratio:1; border-radius:50%; border:none; background:#333; color:white; font-size:28px; cursor:pointer; transition:0.1s;" onclick="updateCalc('6')" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">6</button>
+          <button style="aspect-ratio:1; border-radius:50%; border:none; background:#ff9f0a; color:white; font-size:28px; cursor:pointer; transition:0.1s;" onclick="updateCalc('-')" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">−</button>
+          
+          <button style="aspect-ratio:1; border-radius:50%; border:none; background:#333; color:white; font-size:28px; cursor:pointer; transition:0.1s;" onclick="updateCalc('1')" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">1</button>
+          <button style="aspect-ratio:1; border-radius:50%; border:none; background:#333; color:white; font-size:28px; cursor:pointer; transition:0.1s;" onclick="updateCalc('2')" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">2</button>
+          <button style="aspect-ratio:1; border-radius:50%; border:none; background:#333; color:white; font-size:28px; cursor:pointer; transition:0.1s;" onclick="updateCalc('3')" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">3</button>
+          <button style="aspect-ratio:1; border-radius:50%; border:none; background:#ff9f0a; color:white; font-size:28px; cursor:pointer; transition:0.1s;" onclick="updateCalc('+')" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">+</button>
+          
+          <button style="aspect-ratio:1; border-radius:50%; border:none; background:#333; color:white; font-size:28px; cursor:pointer; transition:0.1s; grid-column:span 2; border-radius:35px;" onclick="updateCalc('0')" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">0</button>
+          <button style="aspect-ratio:1; border-radius:50%; border:none; background:#333; color:white; font-size:28px; cursor:pointer; transition:0.1s;" onclick="updateCalc('.')" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">.</button>
+          <button style="aspect-ratio:1; border-radius:50%; border:none; background:#ff9f0a; color:white; font-size:28px; cursor:pointer; transition:0.1s;" onclick="updateCalc('=')" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">=</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- APP: Weather -->
+    <div id="weather" class="window">
+      <div class="window-header">
+        <div class="window-controls">
+          <button class="control-btn control-close" onclick="closeApp()"></button>
+          <button class="control-btn control-min" onclick="closeApp()"></button>
+          <button class="control-btn control-max"></button>
+        </div>
+        <div class="window-title">Clima</div>
+        <div class="close-mobile" onclick="closeApp()">
+          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        </div>
+      </div>
+      <div class="window-content" style="background:linear-gradient(180deg, #4facfe 0%, #00f2fe 100%); color:white; padding:40px;">
+        <div style="text-align:center;">
+          <div style="font-size:32px; font-weight:600; margin-bottom:10px;">Madrid</div>
+          <div style="font-size:120px; font-weight:200; margin:20px 0;">24°</div>
+          <div style="font-size:24px; opacity:0.9; margin-bottom:30px;">Soleado</div>
+          <div style="display:flex; justify-content:center; gap:60px; font-size:16px; opacity:0.8;">
+            <div>H: 28°</div>
+            <div>L: 18°</div>
+          </div>
+        </div>
+        <div style="margin-top:40px; background:rgba(255,255,255,0.2); border-radius:20px; padding:20px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:15px; padding-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.2);">
+            <span>Hoy</span>
+            <span>24° / 18°</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:15px; padding-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.2);">
+            <span>Mañana</span>
+            <span>26° / 19°</span>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span>Viernes</span>
+            <span>23° / 17°</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- APP: Notes -->
+    <div id="notes" class="window">
+      <div class="window-header">
+        <div class="window-controls">
+          <button class="control-btn control-close" onclick="closeApp()"></button>
+          <button class="control-btn control-min" onclick="closeApp()"></button>
+          <button class="control-btn control-max"></button>
+        </div>
+        <div class="window-title">Notas</div>
+        <div class="close-mobile" onclick="closeApp()">
+          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        </div>
+      </div>
+      <div class="window-content" style="background:#f2f2f7; padding:20px;">
+        <div style="background:#feff9c; padding:20px; border-radius:12px; min-height:300px; box-shadow:0 2px 10px rgba(0,0,0,0.1); color:#333; line-height:1.6; font-size:16px;">
+          <div style="font-weight:700; margin-bottom:15px; color:#666; font-size:14px; text-transform:uppercase; letter-spacing:1px;">Hoy, 16 de marzo</div>
+          <div contenteditable="true" style="outline:none; min-height:200px;">
+            📝 Lista de compras:<br><br>
+            - Leche<br>
+            - Pan<br>
+            - Frutas<br>
+            - Café<br>
+            <br>
+            Recordar:<br>
+            Llamar a mamá ☎️
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <div id="notif">
+      <div class="notif-header">
+        <span class="notif-title">Notificaciones</span>
+        <span class="notif-clear" onclick="clearNotifs()">Borrar todo</span>
+      </div>
+      <div id="notif-list">
+        <div class="notif-item">
+          <div class="notif-icon" style="background:#007AFF;">
+            <svg viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+          </div>
+          <div class="notif-content">
+            <div class="notif-app">PhantomOS</div>
+            <div class="notif-text">Bienvenido a la versión 3.0 optimizada para 120fps</div>
+            <div class="notif-time">Ahora</div>
+          </div>
+        </div>
+        <div class="notif-item">
+          <div class="notif-icon" style="background:#34c759;">
+            <svg viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+          </div>
+          <div class="notif-content">
+            <div class="notif-app">Sistema</div>
+            <div class="notif-text">Actualización completada exitosamente</div>
+            <div class="notif-time">Hace 5 min</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTROL CENTER -->
+    <div id="control">
+      <div class="control-grid">
+        <div class="control-toggle active" onclick="this.classList.toggle('active')">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+          <span class="toggle-label">Wi-Fi</span>
+        </div>
+        <div class="control-toggle" onclick="this.classList.toggle('active')">
+          <svg viewBox="0 0 24 24"><path d="M17.71 9.29l-5-5a1 1 0 0 0-1.42 0l-5 5a1 1 0 0 0 1.42 1.42L11 7.41V19a1 1 0 0 0 2 0V7.41l3.29 3.3a1 1 0 0 0 1.42 0 1 1 0 0 0 0-1.42z"/></svg>
+          <span class="toggle-label">AirDrop</span>
+        </div>
+        <div class="control-toggle active" onclick="this.classList.toggle('active')">
+          <svg viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M12 2a10 10 0 0 1 10 10M12 22a10 10 0 0 1-10-10" fill="none" stroke="white" stroke-width="2"/></svg>
+          <span class="toggle-label">Bluetooth</span>
+        </div>
+        <div class="control-toggle" onclick="this.classList.toggle('active')">
+          <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><path d="M12 6v6l4 2" fill="none" stroke="white" stroke-width="2"/></svg>
+          <span class="toggle-label">Modo avión</span>
+        </div>
+        <div class="control-toggle" onclick="this.classList.toggle('active')">
+          <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/><path d="M12 6v6l4 2" fill="none" stroke="white" stroke-width="2"/></svg>
+          <span class="toggle-label">No molestar</span>
