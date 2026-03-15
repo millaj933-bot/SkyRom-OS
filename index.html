@@ -653,3 +653,250 @@ updateClock();
         <div style="position:absolute;bottom:20px;right:20px;width:60px;height:60px;border-radius:50%;background:#007AFF;display:flex;align-items:center;justify-content:center;color:white;font-size:28px;cursor:pointer;box-shadow:0 4px 15px rgba(0,122,255,0.4);transition:0.2s;" onclick="this.style.transform='scale(0.95)';setTimeout(()=>this.style.transform='scale(1)',150)">+</div>
       </div>
     </div>
+// REEMPLAZA todo el script actual con esto:
+
+let currentMode='mobile';
+let startY=0;
+let startX=0;
+let isSwiping=false;
+
+function selectDevice(mode){
+  currentMode=mode;
+  document.body.className=mode+'-mode';
+  document.getElementById('device-selector').classList.add('hidden');
+  document.getElementById('os-container').classList.add('active');
+  if(mode==='desktop')document.getElementById('unlock-hint').textContent='Haz clic para desbloquear';
+  setTimeout(updateClock,100);
+}
+
+function updateClock(){
+  const now=new Date();
+  const h=now.getHours().toString().padStart(2,'0');
+  const m=now.getMinutes().toString().padStart(2,'0');
+  const timeStr=h+':'+m;
+  document.getElementById('time').textContent=timeStr;
+  document.getElementById('statusTime').textContent=timeStr;
+  setTimeout(updateClock,1000);
+}
+
+function unlock(){
+  document.getElementById('lockscreen').classList.add('unlocked');
+  document.getElementById('home').classList.add('active');
+}
+
+function openApp(name){
+  const app=document.getElementById(name);
+  if(app){
+    app.classList.add('open');
+    app.style.transform='scale(1) translateY(0)';
+    app.style.opacity='1';
+  }
+}
+
+// NUEVO: Cerrar app con animación suave
+function closeApp(){
+  const openWindow=document.querySelector('.window.open');
+  if(!openWindow)return;
+  
+  if(currentMode==='mobile'){
+    // Animación swipe-down para móvil
+    openWindow.style.transition='transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s';
+    openWindow.style.transform='scale(0.9) translateY(100px)';
+    openWindow.style.opacity='0';
+    setTimeout(()=>{
+      openWindow.classList.remove('open');
+      openWindow.style.transform='';
+      openWindow.style.opacity='';
+    },400);
+  }else{
+    // Laptop: cierre instantáneo con animación
+    openWindow.style.transform='scale(0.9)';
+    openWindow.style.opacity='0';
+    setTimeout(()=>{
+      openWindow.classList.remove('open');
+      openWindow.style.transform='';
+      openWindow.style.opacity='';
+    },300);
+  }
+}
+
+function toggleNotif(){
+  document.getElementById('notif').classList.toggle('show');
+  document.getElementById('control').classList.remove('show');
+}
+
+function toggleControl(){
+  document.getElementById('control').classList.toggle('show');
+  document.getElementById('notif').classList.remove('show');
+}
+
+// NUEVO: Gestos mejorados para cerrar apps
+document.addEventListener('touchstart',e=>{
+  startY=e.touches[0].clientY;
+  startX=e.touches[0].clientX;
+  isSwiping=true;
+},{passive:true});
+
+document.addEventListener('touchmove',e=>{
+  if(!isSwiping)return;
+  const openWindow=document.querySelector('.window.open');
+  if(!openWindow||currentMode!=='mobile')return;
+  
+  const currentY=e.touches[0].clientY;
+  const diff=currentY-startY;
+  
+  // Si hay app abierta y swipe hacia abajo desde arriba
+  if(diff>0&&startY<100){
+    e.preventDefault();
+    const progress=Math.min(diff/300,1);
+    openWindow.style.transform=`scale(${1-progress*0.1}) translateY(${diff*0.5}px)`;
+    openWindow.style.opacity=1-progress*0.5;
+  }
+},{passive:false});
+
+document.addEventListener('touchend',e=>{
+  if(!isSwiping)return;
+  isSwiping=false;
+  
+  const endY=e.changedTouches[0].clientY;
+  const diff=endY-startY;
+  const openWindow=document.querySelector('.window.open');
+  
+  // Cerrar app si swipe down > 100px desde top
+  if(openWindow&&currentMode==='mobile'&&startY<100&&diff>100){
+    closeApp();
+  }else if(openWindow&&currentMode==='mobile'){
+    // Reset si no se completó el swipe
+    openWindow.style.transition='transform 0.3s, opacity 0.3s';
+    openWindow.style.transform='scale(1) translateY(0)';
+    openWindow.style.opacity='1';
+    setTimeout(()=>{
+      openWindow.style.transition='';
+    },300);
+  }
+  
+  // Gestos normales notificaciones/control center
+  if(startY<50&&diff>50)toggleNotif();
+  else if(startY>window.innerHeight-50&&diff<-50)toggleControl();
+  else if(document.getElementById('notif').classList.contains('show')&&diff<-50)toggleNotif();
+  else if(document.getElementById('control').classList.contains('show')&&diff>50)toggleControl();
+},{passive:true});
+
+// DESACTIVAR X en móvil - ocultar completamente
+const style=document.createElement('style');
+style.textContent=`
+  body.mobile-mode .close-mobile{display:none !important;}
+  body.mobile-mode .window{touch-action:pan-down;}
+`;
+document.head.appendChild(style);
+
+// Atajos teclado desktop
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape')closeApp();
+  if(e.key==='n'&&e.ctrlKey){e.preventDefault();toggleNotif();}
+  if(e.key==='c'&&e.ctrlKey){e.preventDefault();toggleControl();}
+});
+
+// Funciones de apps
+function toggleSwitch(el){
+  const isOn=el.style.background==='rgb(0, 122, 255)';
+  el.style.background=isOn?'#ccc':'#007aff';
+  el.children[0].style.transform=isOn?'translateX(0)':'translateX(20px)';
+}
+
+function shutterEffect(el){
+  el.style.transform='scale(0.9)';
+  el.children[0].style.transform='scale(0.6)';
+  setTimeout(()=>{
+    el.style.transform='scale(1)';
+    el.children[0].style.transform='scale(0.85)';
+  },150);
+}
+
+function enlargePhoto(el){
+  if(el.style.position==='fixed'){
+    el.style.position='';
+    el.style.inset='';
+    el.style.zIndex='';
+    el.style.borderRadius='';
+  }else{
+    el.style.position='fixed';
+    el.style.inset='20px';
+    el.style.zIndex='10000';
+    el.style.borderRadius='12px';
+  }
+}
+
+function togglePlay(btn){
+  const isPlaying=btn.textContent==='⏸';
+  btn.textContent=isPlaying?'▶':'⏸';
+  btn.style.background=isPlaying?'#007AFF':'#ff2d55';
+}
+
+function seekMusic(e,track){
+  const rect=track.getBoundingClientRect();
+  const percent=(e.clientX-rect.left)/rect.width;
+  track.children[0].style.width=(percent*100)+'%';
+  track.children[1].style.left=(percent*100)+'%';
+}
+
+let calcValue='0';
+let calcOperator='';
+let calcPrevious='';
+
+function calcInput(val){
+  const display=document.getElementById('calc-display');
+  if(val==='AC'){
+    calcValue='0';
+    calcOperator='';
+    calcPrevious='';
+    display.textContent='0';
+  }else if(val==='+/-'){
+    calcValue=String(parseFloat(calcValue)*-1);
+    display.textContent=calcValue;
+  }else if(val==='%'){
+    calcValue=String(parseFloat(calcValue)/100);
+    display.textContent=calcValue;
+  }else if(['+','-','*','/'].includes(val)){
+    calcOperator=val;
+    calcPrevious=calcValue;
+    calcValue='0';
+  }else if(val==='='){
+    if(calcOperator&&calcPrevious){
+      const prev=parseFloat(calcPrevious);
+      const current=parseFloat(calcValue);
+      let result=0;
+      switch(calcOperator){
+        case '+':result=prev+current;break;
+        case '-':result=prev-current;break;
+        case '*':result=prev*current;break;
+        case '/':result=prev/current;break;
+      }
+      calcValue=String(result);
+      display.textContent=calcValue;
+      calcOperator='';
+      calcPrevious='';
+    }
+  }else{
+    if(calcValue==='0')calcValue='';
+    calcValue+=val;
+    display.textContent=calcValue;
+  }
+}
+
+let dialValue='';
+function dialNumber(num){
+  dialValue+=num;
+  document.getElementById('phone-display').textContent=dialValue;
+}
+
+function clearDial(){
+  dialValue=dialValue.slice(0,-1);
+  document.getElementById('phone-display').textContent=dialValue;
+}
+
+function makeCall(){
+  if(dialValue)alert('Llamando a: '+dialValue);
+}
+
+updateClock();
