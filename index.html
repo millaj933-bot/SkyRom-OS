@@ -1,436 +1,237 @@
 <!DOCTYPE html>
-
-<html lang="es">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SkyOS</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="description" content="NEXUS OS - Web-based operating system with fluid animations and iOS-style interactions">
+    
+    <title>NEXUS OS | Web Operating System</title>
+    
+    <!-- PWA Manifest Inline -->
+    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjogIk5leHVzT1MiLCAic2hvcnRfbmFtZSI6ICJOZXh1c09TIiwgInN0YXJ0X3VybCI6ICIvIiwgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsICJiYWNrZ3JvdW5kX2NvbG9yIjogIiMwZjE3MmEiLCAidGhlbWVfY29sb3IiOiAiIzBmMTcyYSIsICJpY29ucyI6IFt7InNyYyI6ICJkYXRhOmltYWdlL3N2Zyt4bWwsJTNDc3ZnIHhtbG5zPSdodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2Zycgdmlld0JveD0nMCAwIDE5MiAxOTInJTNFJTNDcmVjdCBmaWxsPSclMjMwZWE1ZTknIHJ4PSc0MCcgd2lkdGg9JzE5MicgaGVpZ2h0PScxOTInLyUzRSUzQ3BhdGggZmlsbD0nd2hpdGUnIGQ9J005NiA0MCBMMTYwIDk2IEw5NiAxNTIgTDMyIDk2IFonLyUzRSUzQy9zdmclM0UiLCAic2l6ZXMiOiAiMTkyeDE5MiJ9XX0=">
+    
+    <!-- Favicon SVG -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%230ea5e9' rx='20' width='100' height='100'/%3E%3Cpath fill='white' d='M50 20 L80 50 L50 80 L20 50 Z'/%3E%3C/svg%3E">
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-
-<style>
-
-/* ========================= */
-/* SKYOS CORE SYSTEM         */
-/* ========================= */
-
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Inter;
-}
-
-body{
-background:black;
-height:100vh;
-overflow:hidden;
-}
-
-/* ========================= */
-/* WALLPAPER                 */
-/* ========================= */
-
-.wallpaper{
-position:absolute;
-width:100%;
-height:100%;
-background:url("https://picsum.photos/1200/2000") center/cover;
-filter:grayscale(100%);
-}
-
-.blur{
-position:absolute;
-width:100%;
-height:100%;
-backdrop-filter:blur(40px);
-}
-
-/* ========================= */
-/* STATUS BAR                */
-/* ========================= */
-
-.statusBar{
-position:absolute;
-top:0;
-width:100%;
-height:40px;
-display:flex;
-justify-content:space-between;
-align-items:center;
-padding:0 15px;
-color:white;
-font-size:14px;
-}
-
-/* ========================= */
-/* DYNAMIC ISLAND            */
-/* ========================= */
-
-.island{
-position:absolute;
-top:10px;
-left:50%;
-transform:translateX(-50%);
-width:110px;
-height:30px;
-background:black;
-border-radius:20px;
-transition:.4s;
-}
-
-.island.active{
-width:260px;
-height:90px;
-}
-
-/* ========================= */
-/* APP GRID                  */
-/* ========================= */
-
-.apps{
-position:absolute;
-top:90px;
-width:100%;
-display:grid;
-grid-template-columns:repeat(4,1fr);
-gap:25px;
-padding:30px;
-}
-
-.app{
-width:70px;
-height:70px;
-background:rgba(255,255,255,.15);
-backdrop-filter:blur(20px);
-border-radius:18px;
-display:flex;
-align-items:center;
-justify-content:center;
-color:white;
-cursor:pointer;
-transition:.3s;
-}
-
-.app:hover{
-transform:scale(1.1);
-}
-
-/* ========================= */
-/* DOCK                      */
-/* ========================= */
-
-.dock{
-position:absolute;
-bottom:20px;
-left:50%;
-transform:translateX(-50%);
-width:85%;
-height:70px;
-background:rgba(255,255,255,.15);
-backdrop-filter:blur(40px);
-border-radius:25px;
-display:flex;
-justify-content:space-around;
-align-items:center;
-}
-
-/* ========================= */
-/* WINDOWS                   */
-/* ========================= */
-
-.window{
-position:absolute;
-width:100%;
-height:100%;
-background:rgba(0,0,0,.9);
-display:none;
-flex-direction:column;
-color:white;
-animation:open .4s;
-}
-
-@keyframes open{
-0%{transform:scale(.8);opacity:0}
-100%{transform:scale(1);opacity:1}
-}
-
-.topbar{
-height:50px;
-display:flex;
-align-items:center;
-padding:0 15px;
-background:#111;
-}
-
-.close{
-margin-left:auto;
-cursor:pointer;
-}
-
-/* ========================= */
-/* WIDGETS                   */
-/* ========================= */
-
-.widget{
-position:absolute;
-width:160px;
-height:120px;
-background:rgba(255,255,255,.1);
-border-radius:20px;
-backdrop-filter:blur(30px);
-padding:10px;
-color:white;
-}
-
-.widgetClock{top:150px;left:20px}
-.widgetWeather{top:150px;right:20px}
-.widgetBattery{bottom:150px;left:20px}
-.widgetMusic{bottom:150px;right:20px}
-
-/* ========================= */
-/* NOTIFICATIONS             */
-/* ========================= */
-
-.notification{
-position:absolute;
-top:-120px;
-left:50%;
-transform:translateX(-50%);
-background:rgba(30,30,30,.9);
-color:white;
-padding:15px 25px;
-border-radius:15px;
-transition:.5s;
-}
-
-.notification.show{
-top:60px;
-}
-
-/* ========================= */
-/* ANIMATIONS                */
-/* ========================= */
-
-@keyframes skySlideUp{
-0%{transform:translateY(100px);opacity:0}
-100%{transform:translateY(0);opacity:1}
-}
-
-@keyframes skyFade{
-0%{opacity:0}
-100%{opacity:1}
-}
-
-@keyframes islandPulse{
-0%{width:110px}
-50%{width:260px}
-100%{width:110px}
-}
-
-</style>
-
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+        :root{--glass:rgba(255,255,255,0.08);--glass-border:rgba(255,255,255,0.15);--cyan:#0ea5e9;--purple:#8b5cf6;--pink:#ec4899}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0f172a;color:#fff;overflow:hidden;height:100vh;width:100vw;position:relative;user-select:none}
+        
+        /* Loader */
+        #loader{position:fixed;inset:0;background:#0f172a;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .5s,visibility .5s}
+        #loader.hidden{opacity:0;visibility:hidden}
+        .loader-icon{width:80px;height:80px;background:linear-gradient(135deg,var(--cyan),var(--purple));border-radius:22px;display:flex;align-items:center;justify-content:center;animation:pulse 2s ease-in-out infinite;box-shadow:0 10px 40px rgba(14,165,233,.3)}
+        @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(.95);opacity:.8}}
+        .loader-text{margin-top:20px;font-size:18px;font-weight:600;letter-spacing:2px;background:linear-gradient(90deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        
+        /* Backgrounds */
+        .bg-animated{position:fixed;inset:0;background:linear-gradient(-45deg,#0f172a,#1e293b,#0ea5e9,#8b5cf6,#ec4899);background-size:400% 400%;animation:gradient 20s ease infinite;opacity:.3;z-index:0}
+        @keyframes gradient{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+        .bg-grid{position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:60px 60px;z-index:0;pointer-events:none}
+        
+        /* Glass */
+        .glass{background:var(--glass);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border:1px solid var(--glass-border);box-shadow:0 8px 32px rgba(31,38,135,.2)}
+        .glass-strong{background:rgba(255,255,255,.15);backdrop-filter:blur(30px) saturate(200%);border:1px solid rgba(255,255,255,.25)}
+        
+        /* App Icons */
+        .app-icon{width:68px;height:68px;border-radius:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:transform .2s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 4px 15px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.2)}
+        .app-icon:active{transform:scale(.92);transition:transform .1s}
+        .app-icon svg{width:32px;height:32px;color:#fff;filter:drop-shadow(0 2px 4px rgba(0,0,0,.2))}
+        
+        /* Animations */
+        @keyframes appLaunch{0%{transform:scale(1) translateY(0);opacity:1}40%{transform:scale(.85) translateY(10px);opacity:.9}100%{transform:scale(2.5) translateY(-100vh);opacity:0}}
+        @keyframes appClose{0%{transform:scale(2.5) translateY(-100vh);opacity:0}60%{transform:scale(.85) translateY(10px);opacity:.9}100%{transform:scale(1) translateY(0);opacity:1}}
+        .app-launching{animation:appLaunch .5s cubic-bezier(0.25,0.46,0.45,0.94) forwards;z-index:9999}
+        .app-closing{animation:appClose .4s cubic-bezier(0.25,0.46,0.45,0.94) forwards}
+        
+        /* App Windows */
+        .app-window{position:fixed;inset:0;background:rgba(15,23,42,.98);backdrop-filter:blur(40px);z-index:100;opacity:0;pointer-events:none;transition:opacity .3s;display:flex;flex-direction:column}
+        .app-window.active{opacity:1;pointer-events:all}
+        .app-window-header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.1);background:rgba(15,23,42,.8);backdrop-filter:blur(20px)}
+        .app-window-content{flex:1;overflow-y:auto;padding:20px}
+        .close-indicator{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:36px;height:5px;background:rgba(255,255,255,.3);border-radius:3px;cursor:pointer;transition:all .3s;z-index:101}
+        .close-indicator:hover{background:rgba(255,255,255,.6);width:40px}
+        
+        /* Welcome Toast */
+        .welcome-toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.9);background:rgba(0,0,0,.9);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.2);border-radius:24px;padding:32px;text-align:center;opacity:0;pointer-events:none;transition:all .4s cubic-bezier(0.34,1.56,0.64,1);z-index:200;max-width:90%;width:380px;box-shadow:0 25px 50px rgba(0,0,0,.5)}
+        .welcome-toast.show{opacity:1;pointer-events:all;transform:translate(-50%,-50%) scale(1)}
+        .welcome-toast::before{content:'';position:absolute;inset:-2px;border-radius:26px;background:linear-gradient(45deg,var(--cyan),var(--purple),var(--pink));background-size:400% 400%;z-index:-1;opacity:.6;animation:gradient 3s ease infinite}
+        
+        /* Status Bar */
+        .status-bar{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:14px;font-weight:600;z-index:50}
+        
+        /* Dock */
+        .dock{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.15);backdrop-filter:blur(25px) saturate(180%);border-radius:32px;padding:12px 20px;display:flex;gap:16px;border:1px solid rgba(255,255,255,.2);box-shadow:0 10px 40px rgba(0,0,0,.3);z-index:50}
+        
+        /* Utilities */
+        .hide-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
+        .hide-scrollbar::-webkit-scrollbar{display:none}
+        .press-effect{transition:transform .1s}
+        .press-effect:active{transform:scale(.96)}
+        
+        /* Landing Page */
+        #landing-page{position:fixed;inset:0;z-index:50;background:#0f172a;overflow-y:auto}
+        .gradient-text{background:linear-gradient(135deg,var(--cyan),var(--purple),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        
+        /* Responsive */
+        @media(min-width:768px){.dock{padding:16px 28px;gap:20px}.app-icon{width:72px;height:72px}}
+        @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+        
+        /* Widget */
+        .widget{background:rgba(255,255,255,.1);backdrop-filter:blur(10px);border-radius:22px;border:1px solid rgba(255,255,255,.15);position:relative;overflow:hidden}
+        .widget::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent)}
+    </style>
 </head>
-
 <body>
+    <!-- Loader -->
+    <div id="loader">
+        <div class="loader-icon">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        </div>
+        <div class="loader-text">NEXUS OS</div>
+    </div>
 
-<div class="wallpaper"></div>
-<div class="blur"></div>
+    <!-- Backgrounds -->
+    <div class="bg-animated"></div>
+    <div class="bg-grid"></div>
 
-<div class="statusBar">
-<div id="time">12:00</div>
-<div>📶 🔋</div>
-</div>
+    <!-- OS Container -->
+    <div id="nexus-os" class="relative z-10 h-full w-full flex flex-col hidden">
+        
+        <!-- Status Bar -->
+        <div class="status-bar glass-strong">
+            <div class="flex items-center gap-2"><span id="clock">9:41</span></div>
+            <div class="flex items-center gap-2">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zm6-4a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zm6-3a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M17.778 8.232c-2.403-1.302-4.11-3.762-4.11-6.566a.5.5 0 00-.992-.09 8.5 8.5 0 01-5.309 6.855.5.5 0 00.007.95c2.4.683 4.383 2.462 5.275 4.672a.5.5 0 00.902 0c.892-2.21 2.875-3.99 5.275-4.672a.5.5 0 00.007-.95 8.5 8.5 0 01-5.055-6.765zM15.5 16.5a.5.5 0 00-1 0v1a.5.5 0 001 0v-1zm-2.5-.5a.5.5 0 01.5.5v1a.5.5 0 01-1 0v-1a.5.5 0 01.5-.5zm5 0a.5.5 0 01.5.5v1a.5.5 0 01-1 0v-1a.5.5 0 01.5-.5zm-2.5-1.5a.5.5 0 00-1 0v1a.5.5 0 001 0v-1z" clip-rule="evenodd"/></svg>
+                <div class="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-md text-xs"><span>100%</span><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5zm11 1H6v8l4-2 4 2V6z" clip-rule="evenodd"/></svg></div>
+            </div>
+        </div>
 
-<div class="island" id="island"></div>
+        <!-- Home Screen -->
+        <div id="home-screen" class="flex-1 overflow-y-auto hide-scrollbar p-6 pb-32">
+            <!-- Weather Widget -->
+            <div class="widget mb-6 h-44 flex flex-col justify-between p-5 press-effect cursor-pointer" onclick="launchApp('weather', this)">
+                <div class="flex justify-between items-start">
+                    <div><div class="text-sm text-white/60 mb-1">San Francisco</div><div class="text-6xl font-light tracking-tighter">72°</div></div>
+                    <svg class="w-12 h-12 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" stroke-width="2"/><path stroke-width="2" stroke-linecap="round" d="M12 1v2m0 18v2M4.93 4.93l1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                </div>
+                <div><div class="text-xl font-medium">Sunny</div><div class="text-sm text-white/60">H:76° L:58°</div></div>
+            </div>
 
-<div class="notification" id="notif">Nueva notificación</div>
+            <!-- Search -->
+            <div class="glass rounded-2xl px-4 py-3 flex items-center gap-3 mb-6 press-effect">
+                <svg class="w-5 h-5 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" stroke-width="2"/><path stroke-width="2" stroke-linecap="round" d="M21 21l-4.35-4.35"/></svg>
+                <span class="text-white/50 text-sm">Search</span>
+            </div>
 
-<!-- APPS -->
+            <!-- Apps Grid -->
+            <div class="grid grid-cols-4 gap-y-6 gap-x-4 max-w-md mx-auto" id="apps-grid"></div>
+        </div>
 
-<div class="apps">
+        <!-- Dock -->
+        <div class="dock" id="dock"></div>
+    </div>
 
-<div class="app" onclick="openApp('calc')">Calc</div>
-<div class="app" onclick="openApp('gallery')">Fotos</div>
-<div class="app" onclick="openApp('camera')">Cam</div>
-<div class="app" onclick="openApp('ai')">AI</div>
+    <!-- App Windows -->
+    <div id="app-windows"></div>
 
-</div>
+    <!-- Welcome Toast -->
+    <div id="welcome-toast" class="welcome-toast">
+        <div class="mb-4">
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center mb-4 shadow-lg">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"/></svg>
+            </div>
+            <h2 class="text-2xl font-bold mb-2">Welcome to NexusOS</h2>
+            <p class="text-white/80 text-sm leading-relaxed mb-1">Enjoy your experience and have great use!</p>
+            <p class="text-xs text-white/50">Swipe up to close apps</p>
+        </div>
+        <button onclick="hideWelcome()" class="w-full py-3 bg-white/20 hover:bg-white/30 active:bg-white/40 rounded-xl text-sm font-semibold transition-colors">Get Started</button>
+    </div>
 
-<!-- DOCK -->
+    <!-- Landing Page -->
+    <div id="landing-page">
+        <nav class="fixed top-0 left-0 right-0 z-50 p-4">
+            <div class="glass rounded-2xl px-6 py-3 flex items-center justify-between max-w-7xl mx-auto">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"/></svg>
+                    </div>
+                    <span class="font-bold text-lg">NEXUS</span>
+                </div>
+                <button onclick="enterOS()" class="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-sm font-semibold hover:shadow-lg hover:shadow-cyan-500/25 transition-all active:scale-95">Try Demo</button>
+            </div>
+        </nav>
 
-<div class="dock">
-<div class="app">Tel</div>
-<div class="app">Msg</div>
-<div class="app">Web</div>
-<div class="app">Mus</div>
-</div>
+        <section class="min-h-screen flex items-center justify-center pt-20 px-4">
+            <div class="max-w-4xl mx-auto text-center">
+                <div class="inline-flex items-center gap-2 glass px-4 py-2 rounded-full mb-8 text-sm">
+                    <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                    <span>New: NexusOS 2.0</span>
+                </div>
+                
+                <h1 class="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+                    <span class="block text-white mb-2">Technology that</span>
+                    <span class="gradient-text">Flows With You</span>
+                </h1>
+                
+                <p class="text-lg md:text-xl text-white/70 mb-10 max-w-2xl mx-auto leading-relaxed">
+                    Experience a web-based operating system with fluid animations, glassmorphism design, and iOS-style interactions.
+                </p>
 
-<!-- WIDGETS -->
+                <button onclick="enterOS()" class="group px-8 py-4 rounded-2xl bg-white text-slate-900 font-bold text-lg hover:shadow-2xl transition-all active:scale-95 inline-flex items-center gap-2">
+                    <span>Launch NexusOS</span>
+                    <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                </button>
 
-<div class="widget widgetClock" id="clockWidget">
-Hora
-</div>
+                <div class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
+                    <div class="glass rounded-2xl p-4 text-center"><div class="text-2xl font-bold text-cyan-400">120fps</div><div class="text-xs text-white/60 mt-1">Smooth</div></div>
+                    <div class="glass rounded-2xl p-4 text-center"><div class="text-2xl font-bold text-purple-400">Glass</div><div class="text-xs text-white/60 mt-1">Design</div></div>
+                    <div class="glass rounded-2xl p-4 text-center"><div class="text-2xl font-bold text-pink-400">PWA</div><div class="text-xs text-white/60 mt-1">Offline</div></div>
+                    <div class="glass rounded-2xl p-4 text-center"><div class="text-2xl font-bold text-green-400">Open</div><div class="text-xs text-white/60 mt-1">Source</div></div>
+                </div>
+            </div>
+        </section>
 
-<div class="widget widgetWeather">
-Clima
-</div>
+        <section class="py-20 px-4">
+            <div class="max-w-6xl mx-auto">
+                <h2 class="text-3xl md:text-4xl font-bold text-center mb-12">Features</h2>
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div class="glass rounded-3xl p-6 hover:scale-105 transition-transform cursor-pointer">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center mb-4">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Spring Physics</h3>
+                        <p class="text-white/60 text-sm">Real iOS-style app launch animations with natural motion.</p>
+                    </div>
+                    
+                    <div class="glass rounded-3xl p-6 hover:scale-105 transition-transform cursor-pointer">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-400 to-pink-600 flex items-center justify-center mb-4">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Glassmorphism</h3>
+                        <p class="text-white/60 text-sm">Advanced blur effects with dynamic transparency.</p>
+                    </div>
+                    
+                    <div class="glass rounded-3xl p-6 hover:scale-105 transition-transform cursor-pointer">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center mb-4">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Touch Gestures</h3>
+                        <p class="text-white/60 text-sm">Swipe up to close apps with haptic feedback.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-<div class="widget widgetBattery">
-Batería
-</div>
-
-<div class="widget widgetMusic">
-Música
-</div>
-
-<!-- CALCULATOR -->
-
-<div class="window" id="calc">
-
-<div class="topbar">
-Calculadora
-<div class="close" onclick="closeApp('calc')">✕</div>
-</div>
-
-<div style="padding:30px;font-size:30px">
-2 + 2 = 4
-</div>
-
-</div>
-
-<!-- GALLERY -->
-
-<div class="window" id="gallery">
-
-<div class="topbar">
-Galería
-<div class="close" onclick="closeApp('gallery')">✕</div>
-</div>
-
-<div style="padding:20px">
-<img src="https://picsum.photos/300" width="100%">
-</div>
-
-</div>
-
-<!-- CAMERA -->
-
-<div class="window" id="camera">
-
-<div class="topbar">
-Cámara
-<div class="close" onclick="closeApp('camera')">✕</div>
-</div>
-
-<div style="padding:30px">
-📷 Cámara simulada
-</div>
-
-</div>
-
-<!-- AI -->
-
-<div class="window" id="ai">
-
-<div class="topbar">
-SkyAI
-<div class="close" onclick="closeApp('ai')">✕</div>
-</div>
-
-<div style="padding:20px">
-
-<input id="msg">
-<button onclick="send()">Enviar</button>
-
-<div id="chat"></div>
-
-</div>
-
-</div>
-
-<script>
-
-/* ========================= */
-/* SYSTEM FUNCTIONS          */
-/* ========================= */
-
-function openApp(id){
-document.getElementById(id).style.display="flex"
-}
-
-function closeApp(id){
-document.getElementById(id).style.display="none"
-}
-
-/* ========================= */
-/* CLOCK                     */
-/* ========================= */
-
-setInterval(()=>{
-let d=new Date()
-document.getElementById("time").innerText=
-d.getHours()+":"+String(d.getMinutes()).padStart(2,"0")
-},1000)
-
-/* ========================= */
-/* NOTIFICATION              */
-/* ========================= */
-
-setTimeout(()=>{
-document.getElementById("notif").classList.add("show")
-},2000)
-
-/* ========================= */
-/* DYNAMIC ISLAND            */
-/* ========================= */
-
-setInterval(()=>{
-let island=document.getElementById("island")
-island.classList.toggle("active")
-setTimeout(()=>island.classList.remove("active"),2000)
-},8000)
-
-/* ========================= */
-/* SKYAI                     */
-/* ========================= */
-
-function send(){
-
-let input=document.getElementById("msg")
-let chat=document.getElementById("chat")
-
-let q=input.value
-
-chat.innerHTML+="<div>> "+q+"</div>"
-
-let r="SkyAI: soy la IA del sistema."
-
-if(q.toLowerCase().includes("hola")){
-r="SkyAI: hola 👋"
-}
-
-if(q.toLowerCase().includes("skyos")){
-r="SkyAI: SkyOS es tu sistema operativo web."
-}
-
-chat.innerHTML+="<div>"+r+"</div>"
-
-input.value=""
-
-}
-
-/* ========================= */
-/* HAPTIC SIMULATION         */
-/* ========================= */
-
-function vibrate(){
-document.body.style.transform="translateX(3px)"
-setTimeout(()=>{document.body.style.transform="translateX(-3px)"},50)
-setTimeout(()=>{document.body.style.transform="translateX(0)"},100)
-}
-
-</script>
-
-</body>
-</html>
+        <footer class="border-t border-white/10 py-8 px-4 mt-20">
+            <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-2"><div class="w-6 h-6 rounded bg-gradient-to-br from-cyan-400 to-blue-600"></div><span class="font-bold">NEXUS OS</span></div>
+                <p class="text-white/40 text-sm">Single-file OS for GitHub Pages</p>
+                <div class="flex gap-4">
+                    <a href="https://github.com" class="text-white/60 hover:text-white transition-colors">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.
