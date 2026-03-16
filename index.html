@@ -1,184 +1,1050 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>NexusOS</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>SkyOS</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent;user-select:none;}
+html,body{background:#000;height:100%;overflow:hidden;}
+
+/* SELECTOR */
+#device-selector{position:fixed;inset:0;background:linear-gradient(135deg,#667eea 0%,#764ba2 50%,#f093fb 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;z-index:10000;transition:opacity 0.5s;}
+#device-selector.hidden{opacity:0;pointer-events:none;}
+.device-btn{width:140px;height:160px;background:rgba(255,255,255,0.1);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:24px;border:1px solid rgba(255,255,255,0.2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:15px;cursor:pointer;transition:all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);color:white;box-shadow:0 8px 32px rgba(0,0,0,0.2);}
+.device-btn:hover{transform:translateY(-8px) scale(1.05);background:rgba(255,255,255,0.2);box-shadow:0 12px 40px rgba(0,0,0,0.3);}
+.device-btn:active{transform:translateY(-4px) scale(0.98);}
+
+/* OS CONTAINER */
+#os-container{position:fixed;inset:0;opacity:0;pointer-events:none;transition:opacity 0.5s;}
+#os-container.active{opacity:1;pointer-events:auto;}
+body.desktop-mode #os-container{padding:20px;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);display:flex;align-items:center;justify-content:center;}
+body.desktop-mode .device-frame{width:100%;max-width:1200px;height:100%;max-height:800px;background:linear-gradient(180deg,#1e3c72,#2a5298);border-radius:20px;box-shadow:0 25px 80px rgba(0,0,0,0.6);overflow:hidden;position:relative;border:1px solid rgba(255,255,255,0.1);}
+body.mobile-mode .gesture-bar{position:fixed;bottom:8px;left:50%;transform:translateX(-50%);width:120px;height:5px;background:rgba(255,255,255,0.3);border-radius:3px;z-index:9999;transition:all 0.3s;}
+body.mobile-mode .gesture-bar:active{transform:translateX(-50%) scaleX(1.2);background:rgba(255,255,255,0.5);}
+body.desktop-mode .gesture-bar,body.desktop-mode .gesture-hint,body.desktop-mode .gesture-hint-bottom{display:none;}
+
+/* LOCKSCREEN */
+#lockscreen{position:absolute;inset:0;background:linear-gradient(180deg,#000428 0%,#004e92 50%,#000428 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;transform:translateY(0);transition:transform 0.6s cubic-bezier(0.32,0.72,0,1),opacity 0.4s;z-index:1000;cursor:pointer;overflow:hidden;}
+#lockscreen::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(255,255,255,0.1) 0%,transparent 60%);pointer-events:none;}
+#time{font-size:clamp(60px,12vw,90px);font-weight:200;color:white;text-shadow:0 4px 30px rgba(0,0,0,0.4);letter-spacing:-2px;}
+#date{font-size:18px;color:rgba(255,255,255,0.8);margin-top:10px;font-weight:500;}
+#unlock-hint{position:absolute;bottom:100px;color:rgba(255,255,255,0.8);font-size:14px;animation:bounce 2s infinite;font-weight:500;}
+#lockscreen.unlocked{transform:translateY(-100%);opacity:0;pointer-events:none;}
+@keyframes bounce{0%,100%{transform:translateY(0);opacity:0.5;}50%{transform:translateY(-10px);opacity:1;}}
+
+/* HOME */
+#home{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;transform:scale(1.1);transition:opacity 0.4s,transform 0.4s cubic-bezier(0.32,0.72,0,1);z-index:100;background:linear-gradient(180deg,#1e3c72 0%,#2a5298 100%);}
+#home.active{opacity:1;transform:scale(1);}
+.statusbar{height:44px;display:flex;justify-content:space-between;align-items:center;padding:0 25px;font-size:14px;font-weight:600;color:white;background:linear-gradient(180deg,rgba(0,0,0,0.3),transparent);position:relative;z-index:10;}
+.icons{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:20px;padding:30px;align-content:start;overflow-y:auto;}
+.app{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);}
+.app:active{transform:scale(0.88);}
+.icon-wrapper{width:60px;height:60px;border-radius:22%;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 25px rgba(0,0,0,0.3);transition:all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);position:relative;overflow:hidden;}
+.icon-wrapper::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.3) 0%,transparent 50%);opacity:0.6;}
+.app:hover .icon-wrapper{transform:translateY(-5px) scale(1.05) rotate(2deg);box-shadow:0 12px 35px rgba(0,0,0,0.4);}
+.app-icon{width:55%;height:55%;fill:white;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.2));}
+.app-label{font-size:12px;font-weight:500;color:white;text-shadow:0 1px 3px rgba(0,0,0,0.5);letter-spacing:0.3px;}
+.icon-settings{background:linear-gradient(135deg,#8e8e93,#636366);}
+.icon-camera{background:linear-gradient(135deg,#ff3b30,#ff6b6b);}
+.icon-gallery{background:linear-gradient(135deg,#5856d6,#af52de);}
+.icon-music{background:linear-gradient(135deg,#ff2d55,#ff9500);}
+.icon-browser{background:linear-gradient(135deg,#007aff,#5ac8fa);}
+.icon-calc{background:linear-gradient(135deg,#ff9500,#ffcc00);}
+.icon-weather{background:linear-gradient(135deg,#5ac8fa,#34c759);}
+.icon-notes{background:linear-gradient(135deg,#ffcc00,#ff9500);}
+.dock{margin:0 15px 25px;padding:15px;background:rgba(255,255,255,0.15);backdrop-filter:blur(25px);-webkit-backdrop-filter:blur(25px);border-radius:35px;display:flex;justify-content:space-around;align-items:center;border:1px solid rgba(255,255,255,0.1);box-shadow:0 10px 40px rgba(0,0,0,0.3);}
+.dock .icon-wrapper{width:55px;height:55px;border-radius:18px;}
+.dock .app:active{transform:scale(0.9);}
+.icon-phone{background:linear-gradient(135deg,#34c759,#30d158);}
+.icon-messages{background:linear-gradient(135deg,#34c759,#a8e063);}
+
+/* WINDOWS */
+.window{position:absolute;inset:0;background:#f2f2f7;display:none;flex-direction:column;transform:scale(0.9) translateY(20px);opacity:0;transition:all 0.4s cubic-bezier(0.32,0.72,0,1);z-index:500;overflow:hidden;}
+body.desktop-mode .window{border-radius:20px;inset:10px;box-shadow:0 20px 60px rgba(0,0,0,0.4);}
+.window.open{display:flex;transform:scale(1) translateY(0);opacity:1;}
+.window-header{height:50px;background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;align-items:center;padding:0 15px;border-bottom:1px solid rgba(0,0,0,0.08);position:relative;z-index:10;}
+.window-title{font-size:17px;font-weight:600;flex:1;text-align:center;color:#000;}
+.window-controls{display:flex;gap:10px;}
+.control-btn{width:12px;height:12px;border-radius:50%;border:none;cursor:pointer;transition:all 0.2s;position:relative;}
+.control-btn:hover{transform:scale(1.2);}
+.control-btn::after{content:'';position:absolute;inset:-4px;border-radius:50%;opacity:0;transition:opacity 0.2s;}
+.control-btn:hover::after{opacity:1;background:rgba(0,0,0,0.1);}
+.control-close{background:#ff5f57;}
+.control-min{background:#ffbd2e;}
+.control-max{background:#28c840;}
+.close-mobile{display:none;}
+body.mobile-mode .window-controls{display:none;}
+body.mobile-mode .close-mobile{display:flex;position:absolute;right:15px;width:30px;height:30px;align-items:center;justify-content:center;cursor:pointer;border-radius:50%;transition:background 0.2s;}
+.close-mobile:hover{background:rgba(0,0,0,0.1);}
+.close-mobile svg{width:16px;height:16px;}
+.window-content{flex:1;overflow-y:auto;position:relative;}
+
+/* NOTIFICATIONS & CONTROL */
+#notif,#control{position:fixed;left:0;right:0;background:rgba(30,30,30,0.95);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);transition:transform 0.5s cubic-bezier(0.32,0.72,0,1);z-index:900;padding:20px;}
+#notif{top:0;transform:translateY(-120%);border-radius:0 0 30px 30px;}
+#notif.show{transform:translateY(0);}
+#control{bottom:0;transform:translateY(110%);border-radius:30px 30px 0 0;}
+#control.show{transform:translateY(0);}
+body.desktop-mode #notif,body.desktop-mode #control{left:50%;right:auto;width:400px;transform:translate(-50%,-120%);}
+body.desktop-mode #notif{top:10px;border-radius:0 0 20px 20px;}
+body.desktop-mode #control{bottom:10px;transform:translate(-50%,110%);border-radius:20px 20px 0 0;}
+body.desktop-mode #notif.show,body.desktop-mode #control.show{transform:translate(-50%,0);}
+.control-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;}
+.control-toggle{aspect-ratio:1;background:rgba(255,255,255,0.1);border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:all 0.2s;border:1px solid rgba(255,255,255,0.1);}
+.control-toggle:hover{background:rgba(255,255,255,0.15);transform:scale(1.05);}
+.control-toggle.active{background:#007aff;box-shadow:0 4px 15px rgba(0,122,255,0.4);}
+.control-toggle svg{width:26px;height:26px;fill:white;}
+.toggle-label{font-size:11px;color:white;font-weight:500;}
+.gesture-hint{position:fixed;top:0;left:0;right:0;height:30px;z-index:800;cursor:pointer;}
+.gesture-hint-bottom{position:fixed;bottom:0;left:0;right:0;height:40px;z-index:800;cursor:pointer;}
+
+/* APP SPECIFIC STYLES */
+/* Settings */
+.settings-group{background:white;border-radius:12px;overflow:hidden;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,0.1);}
+.settings-item{padding:16px;border-bottom:1px solid #e5e5e5;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:background 0.2s;}
+.settings-item:last-child{border-bottom:none;}
+.settings-item:hover{background:#f9f9f9;}
+.settings-item:active{background:#f0f0f0;}
+.settings-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-right:12px;}
+.settings-row{display:flex;align-items:center;flex:1;}
+.toggle-switch{width:50px;height:30px;background:#ccc;border-radius:15px;position:relative;cursor:pointer;transition:background 0.3s;}
+.toggle-switch.active{background:#007aff;}
+.toggle-knob{width:26px;height:26px;background:white;border-radius:50%;position:absolute;top:2px;left:2px;transition:transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);box-shadow:0 2px 4px rgba(0,0,0,0.2);}
+.toggle-switch.active .toggle-knob{transform:translateX(20px);}
+
+/* Camera */
+.camera-viewfinder{flex:1;background:linear-gradient(45deg,#0f0c29,#302b63,#24243e);position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.camera-viewfinder::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,0.1) 0%,transparent 50%);pointer-events:none;}
+.camera-info{position:absolute;top:20px;right:20px;color:white;font-size:12px;opacity:0.8;background:rgba(0,0,0,0.3);padding:4px 8px;border-radius:4px;}
+.shutter-btn{width:70px;height:70px;border:4px solid white;border-radius:50%;cursor:pointer;transition:all 0.15s;position:relative;}
+.shutter-btn:active{transform:scale(0.9);}
+.shutter-btn::after{content:'';position:absolute;inset:8px;background:white;border-radius:50%;transition:transform 0.15s;}
+.shutter-btn:active::after{transform:scale(0.8);}
+.camera-modes{position:absolute;bottom:30px;display:flex;gap:30px;}
+.mode-btn{width:40px;height:40px;border-radius:50%;border:2px solid rgba(255,255,255,0.5);cursor:pointer;transition:all 0.2s;background:transparent;}
+.mode-btn:hover,.mode-btn.active{border-color:white;background:rgba(255,255,255,0.2);}
+
+/* Gallery */
+.gallery-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:#000;}
+.gallery-item{aspect-ratio:1;cursor:pointer;transition:all 0.3s;position:relative;overflow:hidden;}
+.gallery-item:hover{opacity:0.8;transform:scale(0.98);}
+.gallery-item.enlarged{position:fixed;inset:0;z-index:10000;border-radius:0;transform:none;}
+.gallery-item.enlarged:hover{opacity:1;transform:none;}
+
+/* Music */
+.music-container{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;background:linear-gradient(180deg,#f2f2f7,#e5e5ea);height:100%;padding:20px;}
+.album-art{width:min(260px,50vw);height:min(260px,50vw);background:linear-gradient(135deg,#667eea,#764ba2);border-radius:12px;box-shadow:0 20px 60px rgba(102,126,234,0.4);position:relative;overflow:hidden;animation:float 6s ease-in-out infinite;}
+.album-art::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(255,255,255,0.2) 0%,transparent 70%);}
+@keyframes float{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-10px) rotate(1deg);}}
+.music-info{text-align:center;}
+.music-title{font-size:22px;font-weight:700;margin-bottom:6px;color:#000;}
+.music-artist{color:#8e8e93;font-size:15px;}
+.progress-container{width:min(300px,80%);height:4px;background:#e0e0e0;border-radius:2px;cursor:pointer;position:relative;}
+.progress-bar{position:absolute;left:0;top:0;height:100%;width:35%;background:#007AFF;border-radius:2px;transition:width 0.1s;}
+.progress-knob{position:absolute;left:35%;top:50%;transform:translate(-50%,-50%);width:12px;height:12px;background:#007AFF;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,0.2);opacity:0;transition:opacity 0.2s;}
+.progress-container:hover .progress-knob{opacity:1;}
+.music-controls{display:flex;align-items:center;gap:35px;}
+.control-btn-music{background:none;border:none;font-size:24px;cursor:pointer;opacity:0.6;transition:all 0.2s;padding:10px;border-radius:50%;}
+.control-btn-music:hover{opacity:1;background:rgba(0,0,0,0.05);}
+.play-btn{width:60px;height:60px;background:#007AFF;border:none;border-radius:50%;color:white;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 15px rgba(0,122,255,0.4);transition:all 0.2s;}
+.play-btn:hover{transform:scale(1.1);box-shadow:0 6px 20px rgba(0,122,255,0.6);}
+.play-btn:active{transform:scale(0.95);}
+
+/* Browser */
+.browser-toolbar{padding:10px;display:flex;gap:10px;align-items:center;border-bottom:1px solid #e0e0e0;background:#f2f2f7;}
+.browser-btn{background:none;border:none;font-size:16px;opacity:0.5;cursor:pointer;padding:8px;border-radius:6px;transition:all 0.2s;}
+.browser-btn:hover{opacity:1;background:rgba(0,0,0,0.05);}
+.address-bar{flex:1;background:white;padding:8px 15px;border-radius:10px;font-size:14px;color:#333;box-shadow:0 1px 3px rgba(0,0,0,0.1);display:flex;align-items:center;gap:8px;}
+.browser-content{flex:1;display:flex;align-items:center;justify-content:center;color:#8e8e93;flex-direction:column;gap:15px;background:white;}
+
+/* Calculator */
+.calc-display{flex:1;display:flex;align-items:flex-end;justify-content:flex-end;padding:20px;font-size:64px;font-weight:300;color:white;word-break:break-all;background:black;}
+.calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:12px;background:black;}
+.calc-btn{aspect-ratio:1;border-radius:50%;border:none;font-size:28px;cursor:pointer;transition:all 0.1s;font-weight:500;}
+.calc-btn:active{transform:scale(0.9);}
+.calc-btn.gray{background:#a5a5a5;color:black;}
+.calc-btn.dark{background:#333;color:white;}
+.calc-btn.orange{background:#ff9f0a;color:white;}
+.calc-btn.wide{grid-column:span 2;border-radius:35px;aspect-ratio:auto;}
+
+/* Weather */
+.weather-container{background:linear-gradient(180deg,#4facfe,#00f2fe);color:white;height:100%;padding:30px;display:flex;flex-direction:column;}
+.weather-main{text-align:center;margin-top:20px;}
+.weather-city{font-size:28px;font-weight:600;margin-bottom:8px;}
+.weather-temp{font-size:100px;font-weight:200;margin:15px 0;letter-spacing:-5px;}
+.weather-desc{font-size:20px;opacity:0.9;margin-bottom:25px;}
+.weather-hl{display:flex;justify-content:center;gap:50px;font-size:15px;opacity:0.8;}
+.forecast{margin-top:30px;background:rgba(255,255,255,0.2);border-radius:16px;padding:15px;backdrop-filter:blur(10px);}
+.forecast-item{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.2);}
+.forecast-item:last-child{border-bottom:none;}
+
+/* Notes */
+.notes-container{background:#f2f2f7;height:100%;padding:20px;}
+.note-card{background:#feff9c;padding:20px;border-radius:12px;min-height:400px;box-shadow:0 2px 10px rgba(0,0,0,0.1);color:#333;line-height:1.6;font-size:16px;position:relative;}
+.note-date{font-weight:700;margin-bottom:15px;color:#666;font-size:13px;text-transform:uppercase;letter-spacing:1px;}
+.note-content{outline:none;min-height:300px;cursor:text;}
+.note-content:focus{outline:none;}
+
+/* Phone */
+.phone-display{padding:30px;text-align:center;font-size:36px;color:#000;min-height:80px;display:flex;align-items:center;justify-content:center;letter-spacing:2px;font-weight:300;}
+.phone-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;padding:20px;max-width:300px;margin:0 auto;}
+.phone-btn{aspect-ratio:1;border-radius:50%;border:none;background:white;font-size:28px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.1);transition:all 0.2s;font-weight:400;}
+.phone-btn:active{transform:scale(0.9);box-shadow:0 1px 4px rgba(0,0,0,0.1);}
+.phone-actions{display:flex;justify-content:center;gap:20px;padding:20px;}
+.call-btn{width:70px;height:70px;border-radius:50%;border:none;background:#34c759;color:white;font-size:28px;cursor:pointer;box-shadow:0 4px 15px rgba(52,199,89,0.4);transition:all 0.2s;}
+.call-btn:active{transform:scale(0.9);}
+.clear-btn{width:70px;height:70px;border-radius:50%;border:none;background:#ff3b30;color:white;font-size:24px;cursor:pointer;box-shadow:0 4px 15px rgba(255,59,48,0.4);transition:all 0.2s;}
+.clear-btn:active{transform:scale(0.9);}
+
+/* Messages */
+.messages-list{padding:15px;}
+.message-item{background:white;padding:15px;border-radius:12px;margin-bottom:10px;display:flex;gap:12px;align-items:center;cursor:pointer;transition:all 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
+.message-item:hover{transform:translateX(5px);box-shadow:0 4px 12px rgba(0,0,0,0.1);}
+.message-avatar{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:20px;font-weight:600;flex-shrink:0;}
+.message-content{flex:1;}
+.message-name{font-weight:600;margin-bottom:4px;color:#000;}
+.message-preview{color:#8e8e93;font-size:14px;}
+.message-time{color:#8e8e93;font-size:12px;flex-shrink:0;}
+.new-message-btn{position:absolute;bottom:20px;right:20px;width:60px;height:60px;border-radius:50%;background:#007AFF;display:flex;align-items:center;justify-content:center;color:white;font-size:28px;cursor:pointer;box-shadow:0 4px 15px rgba(0,122,255,0.4);transition:all 0.2s;border:none;}
+.new-message-btn:hover{transform:scale(1.1);box-shadow:0 6px 20px rgba(0,122,255,0.6);}
+.new-message-btn:active{transform:scale(0.95);}
+
+/* Toast Notification */
+.toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.9);background:rgba(0,0,0,0.9);color:white;padding:15px 25px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:all 0.3s;z-index:10001;backdrop-filter:blur(10px);text-align:center;max-width:80%;}
+.toast.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .icons{grid-template-columns:repeat(4,1fr);gap:15px;padding:20px;}
+  .app-label{font-size:11px;}
+  .icon-wrapper{width:55px;height:55px;}
+  .dock{margin:0 10px 20px;padding:12px;}
+  .dock .icon-wrapper{width:50px;height:50px;}
+}
+</style>
 </head>
 <body>
 
-    <!-- Contenedor Principal del OS -->
-    <div id="os-container">
+<!-- SELECTOR -->
+<div id="device-selector">
+  <h1 style="color:white;font-size:42px;font-weight:700;letter-spacing:-1px;text-shadow:0 4px 30px rgba(0,0,0,0.3);">SkyOS</h1>
+  <div style="display:flex;gap:25px;">
+    <button class="device-btn" onclick="selectDevice('mobile')">
+      <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg>
+      <span style="font-size:16px;font-weight:600;">Celular</span>
+    </button>
+    <button class="device-btn" onclick="selectDevice('desktop')">
+      <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      <span style="font-size:16px;font-weight:600;">Laptop</span>
+    </button>
+  </div>
+  <p style="color:rgba(255,255,255,0.7);font-size:14px;margin-top:10px;">Selecciona tu dispositivo para continuar</p>
+</div>
 
-        <!-- Pantalla de Bloqueo -->
-        <div id="lockscreen">
-            <div id="time">12:34</div>
-            <div id="date">Domingo, 1 Enero</div>
-            <div id="unlock-hint">Desliza hacia arriba para desbloquear</div>
-        </div>
-
-        <!-- Pantalla de Inicio (Home) -->
-        <div id="home">
-            <div class="statusbar">
-                <span>12:34</span>
-                <div>
-                    <svg><use xlink:href="#icon-signal"></use></svg>
-                    <svg><use xlink:href="#icon-wifi"></use></svg>
-                    <svg><use xlink:href="#icon-battery"></use></svg>
-                </div>
-            </div>
-            <div class="icons">
-                <!-- Ejemplo de App Icon -->
-                <div class="app" data-app="calculator">
-                    <div class="icon-wrapper icon-calc">
-                        <svg class="app-icon"><use xlink:href="#icon-calc"></use></svg>
-                    </div>
-                    <div class="app-label">Calculadora</div>
-                </div>
-                <div class="app" data-app="notes">
-                    <div class="icon-wrapper icon-notes">
-                        <svg class="app-icon"><use xlink:href="#icon-notes"></use></svg>
-                    </div>
-                    <div class="app-label">Notas</div>
-                </div>
-                <div class="app" data-app="browser">
-                    <div class="icon-wrapper icon-browser">
-                        <svg class="app-icon"><use xlink:href="#icon-browser"></use></svg>
-                    </div>
-                    <div class="app-label">Navegador</div>
-                </div>
-                 <div class="app" data-app="settings">
-                    <div class="icon-wrapper icon-settings">
-                        <svg class="app-icon"><use xlink:href="#icon-settings"></use></svg>
-                    </div>
-                    <div class="app-label">Ajustes</div>
-                </div>
-                <!-- Añadir más iconos aquí -->
-            </div>
-            <div class="dock">
-                <div class="icon-wrapper icon-phone">
-                    <svg class="app-icon"><use xlink:href="#icon-phone"></use></svg>
-                </div>
-                <div class="icon-wrapper icon-messages">
-                    <svg class="app-icon"><use xlink:href="#icon-messages"></use></svg>
-                </div>
-                <!-- Más iconos del dock -->
-            </div>
-        </div>
-
-        <!-- Ventanas de Aplicaciones (se añadirán dinámicamente con JS) -->
-        <!-- Ejemplo de Ventana -->
-        <div id="calculator-window" class="window">
-            <div class="window-header">
-                <div class="window-controls">
-                    <button class="control-btn control-close" data-window-id="calculator-window">X</button>
-                    <button class="control-btn control-min" data-window-id="calculator-window">-</button>
-                    <button class="control-btn control-max" data-window-id="calculator-window">[]</button>
-                </div>
-                <div class="window-title">Calculadora</div>
-                <button class="close-mobile" data-window-id="calculator-window">
-                    <svg><use xlink:href="#icon-close-mobile"></use></svg>
-                </button>
-            </div>
-            <div class="window-content">
-                <h2>Calculadora</h2>
-                <p>¡Esta es la ventana de la Calculadora!</p>
-                <p>Aquí iría la interfaz de la calculadora.</p>
-            </div>
-        </div>
-
-         <div id="notes-window" class="window">
-            <div class="window-header">
-                <div class="window-controls">
-                    <button class="control-btn control-close" data-window-id="notes-window">X</button>
-                    <button class="control-btn control-min" data-window-id="notes-window">-</button>
-                    <button class="control-btn control-max" data-window-id="notes-window">[]</button>
-                </div>
-                <div class="window-title">Notas</div>
-                 <button class="close-mobile" data-window-id="notes-window">
-                    <svg><use xlink:href="#icon-close-mobile"></use></svg>
-                </button>
-            </div>
-            <div class="window-content">
-                <h2>Notas</h2>
-                <p>¡Crea tus notas aquí!</p>
-                <textarea style="width:100%; height:200px; margin-top:20px; padding:10px; border-radius:8px;"></textarea>
-            </div>
-        </div>
-
-        <!-- Elementos del Modo Desktop -->
-        <div class="taskbar">
-            <div class="taskbar-start-btn" id="start-menu-toggle">
-                <svg><use xlink:href="#icon-windows"></use></svg>
-            </div>
-            <div class="taskbar-icons">
-                <div class="taskbar-icon-wrapper" data-app="calculator">
-                    <svg class="taskbar-icon"><use xlink:href="#icon-calc"></use></svg>
-                </div>
-                 <div class="taskbar-icon-wrapper" data-app="notes">
-                    <svg class="taskbar-icon"><use xlink:href="#icon-notes"></use></svg>
-                </div>
-                <!-- Más iconos fijados -->
-            </div>
-            <div class="taskbar-right-section">
-                <span id="current-time">12:34</span>
-                <!-- Aquí irían iconos de red, volumen, notificaciones -->
-            </div>
-        </div>
-
-        <!-- Menú de Inicio (Start Menu) -->
-        <div id="start-menu" class="start-menu">
-            <div class="start-menu-header">
-                <div class="user-profile">
-                    <div class="user-avatar"></div>
-                    <span>Usuario Nexus</span>
-                </div>
-            </div>
-            <div class="start-menu-nav">
-                <a href="#" data-app="settings"><svg><use xlink:href="#icon-settings"></use></svg> Ajustes</a>
-                <a href="#" data-app="browser"><svg><use xlink:href="#icon-browser"></use></svg> Navegador</a>
-                <!-- Más enlaces -->
-            </div>
-            <div class="start-menu-search">
-                <input type="text" placeholder="Buscar...">
-            </div>
-        </div>
-
-        <!-- Contenedor para iconos en el escritorio -->
-        <div class="desktop-icons-container">
-            <div class="desktop-app" data-app="settings">
-                 <div class="icon-wrapper icon-settings">
-                    <svg class="app-icon"><use xlink:href="#icon-settings"></use></svg>
-                </div>
-                <div class="app-label">Ajustes</div>
-            </div>
-            <!-- Más iconos de escritorio -->
-        </div>
-
+<!-- OS -->
+<div id="os-container">
+  <div class="gesture-hint" onclick="toggleNotif()"></div>
+  <div class="gesture-hint-bottom" onclick="toggleControl()"></div>
+  <div class="gesture-bar" onclick="goHome()"></div>
+  
+  <div class="device-frame">
+    <!-- LOCKSCREEN -->
+    <div id="lockscreen" onclick="unlock()">
+      <div id="time">00:00</div>
+      <div id="date">Lunes, 16 de marzo</div>
+      <div id="unlock-hint">Toca para desbloquear</div>
     </div>
 
-    <!-- Selector de Dispositivo (al inicio) -->
-    <div id="device-selector">
-        <div class="device-btn" data-device="mobile">
-            <div class="device-btn-icon">📱</div>
-            <div>Modo Móvil</div>
+    <!-- HOME -->
+    <div id="home">
+      <div class="statusbar">
+        <span id="statusTime">00:00</span>
+        <div style="display:flex;gap:5px;align-items:center;">
+          <span>📶</span>
+          <span>🔋</span>
         </div>
-        <div class="device-btn" data-device="desktop">
-            <div class="device-btn-icon">💻</div>
-            <div>Modo Laptop</div>
+      </div>
+      
+      <div class="icons">
+        <div class="app" onclick="openApp('settings')">
+          <div class="icon-wrapper icon-settings">
+            <svg class="app-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="white" stroke-width="2"/><path d="M12 1v6m0 6v6m4-10l4-4M6 6L2 2m20 20l-4-4M6 18l-4 4M23 12h-6M1 12h6m14 4l-4-4M6 14l-4 4" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <span class="app-label">Ajustes</span>
         </div>
+        <div class="app" onclick="openApp('camera')">
+          <div class="icon-wrapper icon-camera">
+            <svg class="app-icon" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="13" r="4" fill="none" stroke="white" stroke-width="2"/></svg>
+          </div>
+          <span class="app-label">Cámara</span>
+        </div>
+        <div class="app" onclick="openApp('gallery')">
+          <div class="icon-wrapper icon-gallery">
+            <svg class="app-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="white" stroke-width="2"/><circle cx="8.5" cy="8.5" r="1.5" fill="white"/><polyline points="21 15 16 10 5 21" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <span class="app-label">Galería</span>
+        </div>
+        <div class="app" onclick="openApp('music')">
+          <div class="icon-wrapper icon-music">
+            <svg class="app-icon" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="18" r="3" fill="none" stroke="white" stroke-width="2"/><circle cx="18" cy="16" r="3" fill="none" stroke="white" stroke-width="2"/></svg>
+          </div>
+          <span class="app-label">Música</span>
+        </div>
+        <div class="app" onclick="openApp('browser')">
+          <div class="icon-wrapper icon-browser">
+            <svg class="app-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="white" stroke-width="2"/><line x1="2" y1="12" x2="22" y2="12" stroke="white" stroke-width="2"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" fill="none" stroke="white" stroke-width="2"/></svg>
+          </div>
+          <span class="app-label">Safari</span>
+        </div>
+        <div class="app" onclick="openApp('calc')">
+          <div class="icon-wrapper icon-calc">
+            <svg class="app-icon" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2" fill="none" stroke="white" stroke-width="2"/><line x1="8" y1="6" x2="16" y2="6" stroke="white" stroke-width="2"/><line x1="8" y1="10" x2="16" y2="10" stroke="white" stroke-width="2"/><line x1="8" y1="14" x2="16" y2="14" stroke="white" stroke-width="2"/><line x1="8" y1="18" x2="16" y2="18" stroke="white" stroke-width="2"/></svg>
+          </div>
+          <span class="app-label">Calc</span>
+        </div>
+        <div class="app" onclick="openApp('weather')">
+          <div class="icon-wrapper icon-weather">
+            <svg class="app-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="none" stroke="white" stroke-width="2"/><line x1="12" y1="1" x2="12" y2="3" stroke="white" stroke-width="2"/><line x1="12" y1="21" x2="12" y2="23" stroke="white" stroke-width="2"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="white" stroke-width="2"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="white" stroke-width="2"/><line x1="1" y1="12" x2="3" y2="12" stroke="white" stroke-width="2"/><line x1="21" y1="12" x2="23" y2="12" stroke="white" stroke-width="2"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="white" stroke-width="2"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="white" stroke-width="2"/></svg>
+          </div>
+          <span class="app-label">Clima</span>
+        </div>
+        <div class="app" onclick="openApp('notes')">
+          <div class="icon-wrapper icon-notes">
+            <svg class="app-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="14 2 14 8 20 8" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="16" y1="13" x2="8" y2="13" stroke="white" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="17" x2="8" y2="17" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <span class="app-label">Notas</span>
+        </div>
+      </div>
+
+      <div class="dock">
+        <div class="app" onclick="openApp('phone')">
+          <div class="icon-wrapper icon-phone">
+            <svg class="app-icon" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7 12.8 12.8 0 0 0 .7 2.8 2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5 12.8 12.8 0 0 0 2.8.7A2 2 0 0 1 22 16.9z" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+        <div class="app" onclick="openApp('messages')">
+          <div class="icon-wrapper icon-messages">
+            <svg class="app-icon" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5z" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+        <div class="app" onclick="openApp('browser')">
+          <div class="icon-wrapper icon-browser">
+            <svg class="app-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="white" stroke-width="2"/><line x1="2" y1="12" x2="22" y2="12" stroke="white" stroke-width="2"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" fill="none" stroke="white" stroke-width="2"/></svg>
+          </div>
+        </div>
+        <div class="app" onclick="openApp('camera')">
+          <div class="icon-wrapper icon-camera">
+            <svg class="app-icon" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="13" r="4" fill="none" stroke="white" stroke-width="2"/></svg>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Iconos SVG (Sprite Sheet) - Necesitas tener estos iconos definidos -->
-    <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
-        <!-- Iconos de Status Bar -->
-        <symbol id="icon-signal" viewBox="0 0 24 24"><path d="M19.5 17.5c-.7.7-1.8.7-2.5 0L12 12.5l-5 5c-.7.7-1.8.7-2.5 0-.7-.7-.7-1.8 0-2.5l7-7c.7-.7 1.8-.7 2.5 0l5 5c.7.7.7 1.8 0 2.5z"/></symbol>
-        <symbol id="icon-wifi" viewBox="0 0 24 24"><path d="M12 18.5a.75.75 0 0 1 .75-.75h.01a.75.75 0 0 1 0 1.5h-.01a.75.75 0 0 1-.75-.75zm3.49-6.01a.75.75 0 0 1 1.06-.04l.03.04a.75.75 0 0 1-.04 1.06l-.04.03a.75.75 0 0 1-1.06.04l-.03-.04a.75.75 0 0 1 .04-1.06zm-6.98 0a.75.75 0 0 1 1.06-.04l.03.04a.75.75 0 0 1-.04 1.06l-.04.03a.75.75 0 0 1-1.06.04l-.03-.04a.75.75 0 0 1 .04-1.06zm3.49-6.01a.75.75 0 0 1 1.06-.04l.03.04a.75.75 0 0 1-.04 1.06l-.04.03a.75.75 0 0 1-1.06.04l-.03-.04a.75.75 0 0 1 .04-1.06zm-7.46 5.51a.75.75 0 0 1 1.06-.04l.03.04a.75.75 0 0 1-.04 1.06l-.04.03a.75.75 0 0 1-1.06.04l-.03-.04a.75.75 0 0 1 .04-1.06zm7.46 5.51a.75.75 0 0 1 1.06-.04l.03.04a.75.75 0 0 1-.04 1.06l-.04.03a.75.75 0 0 1-1.06.04l-.03-.04a.75.75 0 0 1 .04-1.06z"/></symbol>
-        <symbol id="icon-battery" viewBox="0 0 24 24"><path d="M19 4h-2V2h-2v2H9V2H7v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm-1 16H6V8h12v12zm-6-5h-2v2h2v-2z"/></symbol>
+    <!-- NOTIFICATIONS -->
+    <div id="notif" onclick="if(event.target===this)toggleNotif()">
+      <h3 style="color:white;margin-bottom:20px;font-size:20px;font-weight:600;">Notificaciones</h3>
+      <div style="background:rgba(255,255,255,0.1);padding:15px;border-radius:12px;color:white;border:1px solid rgba(255,255,255,0.1);">
+        <div style="font-weight:600;margin-bottom:5px;display:flex;align-items:center;gap:10px;">
+          <div style="width:8px;height:8px;background:#34c759;border-radius:50%;"></div>
+          SkyOS
+        </div>
+        <div style="opacity:0.8;font-size:14px;line-height:1.4;">Bienvenido a la versión 2.0. Sistema operativo mejorado y optimizado.</div>
+        <div style="margin-top:10px;font-size:12px;opacity:0.6;">Ahora</div>
+      </div>
+    </div>
 
-        <!-- Iconos de Aplicaciones -->
-        <symbol id="icon-calc" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 18H5c-.5 0-1-.5-1-1V5c0-.5.5-1 1-1h14c.5 0 1 .5 1 1v14c0 .5-.5 1-1 1zm-8-4.5h4.5v2H11v-2zm-4-7h4.5v2H7v-2zm0 4h4.5v2H7v-2zm8-4h-4.5v2H15v-2zm0 4h-4.5v2H15v-2zm0 4h-4.5v2H15v-2z"/></symbol>
-        <symbol id="icon-notes" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-3-6H8v-2h8v2zm0 4H8v-2h8v2z"/></symbol>
-        <symbol id="icon-browser" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v2h-2zm0 4h2v2h-2zm0 4h2v2h-2z"/></symbol>
-        <symbol id="icon-settings" viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.32-.61-.23l-2.44 1c-.49-.38-1.01-.7-1.56-.94l-.35-2.65C15.47 2.97 15.22 2.8 15 2.8h-4c-.22 0-.47.17-.5.38l-.34 2.65c-.56.24-1.08.56-1.56.94l-2.43-1c-.23-.09-.49-.01-.62.23l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.32.61.23l2.44-1c.49.38 1.01.7
+    <!-- CONTROL CENTER -->
+    <div id="control">
+      <div class="control-grid">
+        <div class="control-toggle active" onclick="this.classList.toggle('active')">
+          <svg viewBox="0 0 24 24" fill="white"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span class="toggle-label">Wi-Fi</span>
+        </div>
+        <div class="control-toggle" onclick="this.classList.toggle('active')">
+          <svg viewBox="0 0 24 24" fill="white"><path d="M17.7 9.3l-5-5a1 1 0 0 0-1.4 0l-5 5a1 1 0 0 0 1.4 1.4L11 7.4V19a1 1 0 0 0 2 0V7.4l3.3 3.3a1 1 0 0 0 1.4 0 1 1 0 0 0 0-1.4z"/></svg>
+          <span class="toggle-label">AirDrop</span>
+        </div>
+        <div class="control-toggle active" onclick="this.classList.toggle('active')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5l11 11M12 2a10 10 0 0 1 10 10M12 22a10 10 0 0 1-10-10"/></svg>
+          <span class="toggle-label">Bluetooth</span>
+        </div>
+        <div class="control-toggle" onclick="this.classList.toggle('active')">
+          <svg viewBox="0 0 24 24" fill="white"><path d="M12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10A10 10 0 0 1 2 12 10 10 0 0 1 12 2m0 2a8 8 0 0 0-8 8c0 4.4 3.6 8 8 8s8-3.6 8-8-3.6-8-8-8m0 2a6 6 0 0 1 6 6 6 6 0 0 1-6 6 6 6 0 0 1-6-6 6 6 0 0 1 6-6m0 2a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4z"/></svg>
+          <span class="toggle-label">Airplane</span>
+        </div>
+        <div class="control-toggle" onclick="toggleFlashlight(this)">
+          <svg viewBox="0 0 24 24" fill="white"><path d="M13 2v4h-2V2h2zm4 4h-2v4h2V6zm-8 0H7v4h2V6zm10 4h-2v4h2v-4zm-8 0h-2v4h2v-4zm-4 4H5v4h2v-4zm16 0h-2v4h2v-4zM7 18h2v4H7v-4zm4 0h2v4h-2v-4zm4 0h2v4h-2v-4z"/></svg>
+          <span class="toggle-label">Flash</span>
+        </div>
+        <div class="control-toggle" onclick="this.classList.toggle('active')">
+          <svg viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+          <span class="toggle-label">Focus</span>
+        </div>
+      </div>
+      <div style="margin-top:20px;background:rgba(255,255,255,0.1);border-radius:12px;padding:15px;display:flex;align-items:center;justify-content:space-between;">
+        <span style="color:white;font-size:14px;">Brillo</span>
+        <div style="flex:1;margin-left:15px;height:6px;background:rgba(255,255,255,0.2);border-radius:3px;position:relative;cursor:pointer;" onclick="adjustBrightness(event,this)">
+          <div id="brightness-bar" style="position:absolute;left:0;top:0;height:100%;width:70%;background:white;border-radius:3px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- APP: Settings -->
+    <div id="settings" class="window">
+      <div class="window-header">
+        <div class="window-controls">
+          <button class="control-btn control-close" onclick="closeApp()"></button>
+          <button class="control-btn control-min" onclick="closeApp()"></button>
+          <button class="control-btn control-max"></button>
+        </div>
+        <div class="window-title">Ajustes</div>
+        <div class="close-mobile" onclick="closeApp()">
+          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div class="window-content" style="background:#f2f2f7;padding:20px;">
+        <div class="settings-group">
+          <div class="settings-item">
+            <div class="settings-row">
+              <div class="settings-icon" style="background:#007AFF;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </div>
+              <span>Modo Avión</span>
+            </div>
+            <div class="toggle-switch" onclick="toggleSwitch(this)">
+              <div class="toggle-knob"></div>
+            </div>
+          </div>
+          <div class="settings-item" onclick="showToast('Wi-Fi: PhantomNet')">
+            <div class="settings-row">
+              <div class="settings-icon" style="background:#007AFF;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </div>
+              <span>Wi-Fi</span>
+            </div>
+            <span style="color:#8e8e93;font-size:14px;">PhantomNet ▸</span>
+          </div>
+          <div class="settings-item" onclick="showToast('Bluetooth activado')">
+            <div class="settings-row">
+              <div class="settings-icon" style="background:#007AFF;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5l11 11M12 2a10 10 0 0 1 10 10M12 22a10 10 0 0 1-10-10"/></svg>
+              </div>
+              <span>Bluetooth</span>
+            </div>
+            <span style="color:#8e8e93;font-size:14px;">Activado ▸</span>
+          </div>
+        </div>
+        <div class="settings-group">
+          <div class="settings-item" onclick="showToast('SkyOS v2.0\nBuild 2024.16.3')">
+            <div class="settings-row">
+              <div class="settings-icon" style="background:#8e8e93;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+              </div>
+              <span>Acerca de</span>
+            </div>
+            <span style="color:#8e8e93;font-size:14px;">SkyOS 2.0 ▸</span>
+          </div>
+          <div class="settings-item" onclick="showToast('Wallpaper cambiado')">
+            <div class="settings-row">
+              <div class="settings-icon" style="background:#5856d6;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21" fill="none" stroke="white" stroke-width="2"/></svg>
+              </div>
+              <span>Fondo de pantalla</span>
+            </div>
+            <span style="color:#8e8e93;font-size:14px;">▸</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- APP: Camera -->
+    <div id="camera" class="window">
+      <div class="window-header" style="background:rgba(0,0,0,0.5);color:white;border:none;">
+        <div class="window-controls">
+          <button class="control-btn control-close" style="background:#ff5f57;" onclick="closeApp()"></button>
+          <button class="control-btn control-min" style="background:#ffbd2e;" onclick="closeApp()"></button>
+          <button class="control-btn control-max" style="background:#28c840;"></button>
+        </div>
+        <div class="window-title" style="color:white;">Cámara</div>
+        <div class="close-mobile" onclick="closeApp()">
+          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div class="camera-viewfinder">
+        <div class="camera-info">HD • 60FPS</div>
+        <div class="shutter-btn" onclick="shutterEffect(this)"></div>
+        <div class="camera-modes">
+          <div class="mode-btn" onclick="this.classList.toggle('active')"></div>
+          <div class="mode-btn active" onclick="this.classList.toggle('active')"></div>
+          <div class="mode-btn" onclick="this.classList.toggle('active')"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- APP: Gallery -->
+    <div id="gallery" class="window">
+      <div class="window-header">
+        <div class="window-controls">
+          <button class="control-btn control-close" onclick="closeApp()"></button>
+          <button class="control-btn control-min" onclick="closeApp()"></button>
+          <button class="control-btn control-max"></button>
+        </div>
+        <div class="window-title">Galería</div>
+        <div class="close-mobile" onclick="closeApp()">
+          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div class="window-content" style="padding:0;">
+        <div class="gallery-grid">
+          <div class="gallery-item" style="background:linear-gradient(135deg,#667eea,#764ba2);" onclick="enlargePhoto(this)"></div>
+          <div class="gallery-item" style="background:linear-gradient(135deg,#f093fb,#f5576c);" onclick="enlargePhoto(this)"></div>
+          <div class="gallery-item" style="background:linear-gradient(135deg,#4facfe,#00f2fe);" onclick="enlargePhoto(this)"></div>
+          <div class="gallery-item" style="background:linear-gradient(135deg,#43e97b,#38f9d7);" onclick="enlargePhoto(this)"></div>
+          <div class="gallery-item" style="background:linear-gradient(135deg,#fa709a,#fee140);" onclick="enlargePhoto(this)"></div>
+          <div class="gallery-item" style="background:linear-gradient(135deg,#30cfd0,#330867);" onclick="enlargePhoto(this)"></div>
+          <div class="gallery-item" style="background:linear-gradient(135deg,#a8edea,#fed6e3);" onclick="enlargePhoto(this)"></div>
+          <div class="gallery-item" style="background:linear-gradient(135deg,#ff9a9e,#fecfef);" onclick="enlargePhoto(this)"></div>
+          <div class="gallery-item" style="background:linear-gradient(135deg,#ffecd2,#fcb69f);" onclick="enlargePhoto(this)"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- APP: Music -->
+    <div id="music" class="window">
+      <div class="window-header">
+        <div class="window-controls">
+          <button class="control-btn control-close" onclick="closeApp()"></button>
+          <button class="control-btn control-min" onclick="closeApp()"></button>
+          <button class="control-btn control-max"></button>
+        </div>
+        <div class="window-title">Música</div>
+        <div class="close-mobile" onclick="closeApp()">
+          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div class="window-content" style="padding:0;">
+        <div class="music-container">
+          <div class="album-art"></div>
+          <div class="music-info">
+            <div class="music-title">Midnight City</div>
+            <div class="music-artist">M83 • Hurry Up, We're Dreaming</div>
+          </div>
+          <div class="progress-container" onclick="seekMusic(event,this)">
+            <div class="progress-bar" id="music-progress"></div>
+            <div class="progress-knob"></div>
+          </div>
+          <div class="music-controls">
+            <button class="control-btn-music">⏮</button>
+            <button class="play-btn" id="play-btn" onclick="togglePlay(this)">▶</button>
+            <button class="control-btn-music">⏭</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- APP: Browser -->
+    <div id="browser" class="window">
+      <div class="window-header">
+        <div class="window-controls">
+          <button class="control-btn control-close" onclick="closeApp()"></button>
+          <button class="control-btn control-min" onclick="closeApp()"></button>
+          <button class="control-btn control-max"></button>
+        </div>
+        <div class="window-title">Safari</div>
+        <div class="close-mobile" onclick="closeApp()">
+          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div style="background:#f2f2f7;flex:1;display:flex;flex-direction:column;">
+        <div class="browser-toolbar">
+          <button class="browser-btn">←</button>
+          <button class="browser-btn">→</button>
+          <button class="browser-btn">⟳</button>
+          <div class="address-bar" onclick="this.querySelector('span').textContent='Buscando...';setTimeout(()=>this.querySelector('span').textContent='phantomos.com',1000)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <span style="color:#8e8e93;">phantomos.com</span>
+          </div>
+        </div>
+        <div class="browser-content">
+          <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <div style="font-size:18px;color:#666;">Página de inicio</div>
+          <div style="font-size:13px;color:#999;">Versión de demostración</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- APP: Calculator -->
+    <div id="calc" class="window">
+      <div class="window-header">
+        <div class="window-controls">
+          <button class="control-btn control-close" onclick="closeApp()"></button>
+          <button class="control-btn control-min" onclick="closeApp()"></button>
+          <button class="control-btn control-max"></button>
+        </div>
+        <div class="window-title">Calculadora</div>
+        <div class="close-mobile" onclick="closeApp()">
+          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div style="flex:1;background:black;display:flex;flex-direction:column;">
+        <div class="calc-display" id="calc-display">0</div>
+        <div class="calc-grid">
+          <button class="calc-btn gray" onclick="calcInput('AC')">AC</button>
+          <button class="calc-btn gray" onclick="calcInput('+/-')">+/-</button>
+          <button class="calc-btn gray" onclick="calcInput('%')">%</button>
+          <button class="calc-btn orange" onclick="calcInput('/')">÷</button>
+          <button class="calc-btn dark" onclick="calcInput('7')">7</button>
+          <button class="calc-btn dark" onclick="calcInput('8')">8</button>
+          <button class="calc-btn dark" onclick="calcInput('9')">9</button>
+          <button class="calc-btn orange" onclick="calcInput('*')">×</button>
+          <button class="calc-btn dark" onclick="calcInput('4')">4</button>
+          <button class="calc-btn dark" onclick="calcInput('5')">5</button>
+          <button class="calc-btn dark" onclick="calcInput('6')">6</button>
+          <button class="calc-btn orange" onclick="calcInput('-')">−</button>
+          <button class="calc-btn dark" onclick="calcInput('1')">1</button>
+          <button class="calc-btn dark" onclick="calcInput('2')">2</button>
+          <button class="calc-btn dark" onclick="calcInput('3')">3</button>
+          <button class="calc-btn orange" onclick="calcInput('+')">+</button>
+          <button class="calc-btn dark wide" onclick="calcInput('0')">0</button>
+          <button class="calc-btn dark" onclick="calcInput('.')">.</button>
+          <button class="calc-btn orange" onclick="calcInput('=')">=</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- APP: Weather -->
+    <div id="weather" class="window">
+      <div class="window-header">
+        <div class="window-controls">
+          <button class="control-btn control-close" onclick="closeApp()"></button>
+          <button class="control-btn control-min" onclick="closeApp()"></button>
+          <button class="control-btn control-max"></button>
+        </div>
+        <div class="window-title">Clima</div>
+        <div class="close-mobile" onclick="closeApp()">
+          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div class="window-content" style="padding:0;">
+        <div class="weather-container">
+          <div class="weather-main">
+            <div class="weather-city">Madrid</div>
+            <div class="weather-temp">24°</div>
+            <div class="weather-desc">Soleado</div>
+            <div class="weather-hl">
+              <div>H: 28°</div>
+              <div>L: 18°</div>
+            </div>
+          </div>
+          <div class="forecast">
+            <div class="forecast-item">
+              <span>Hoy</span><span>24° / 18°</span>
+            </div>
+            <div class="forecast-item">
+              <span>Mañana</span><span>26° / 19°</span>
+            </div>
+            <div class="forecast-item">
+              <span>Miércoles</span><span>23° / 17°</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- APP: Notes -->
+    <div id="notes" class="window">
+      <div class="window-header">
+        <div class="window-controls">
+          <button class="control-btn control-close" onclick="closeApp()"></button>
+          <button class="control-btn control-min" onclick="closeApp()"></button>
+          <button class="control-btn control-max"></button>
+        </div>
+        <div class="window-title">Notas</div>
+        <div class="close-mobile" onclick="closeApp()">
+          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div class="window-content" style="padding:0;">
+        <div class="notes-container">
+          <div class="note-card">
+            <div class="note-date">Hoy, 16 de marzo</div>
+            <div class="note-content" contenteditable="true">
+📝 Lista de compras:<br><br>
+- Leche<br>
+- Pan<br>
+- Frutas<br>
+- Café<br><br>
+Recordar:<br>
+Llamar a mamá ☎️<br><br>
+Ideas app:<br>
+• Modo oscuro<br>
+• Widgets home<br>
+• Mejor cámara
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- APP: Phone -->
+    <div id="phone" class="window">
+      <div class="window-header" style="background:#34c759;">
+        <div class="window-controls">
+          <button class="control-btn control-close" onclick="closeApp()"></button>
+          <button class="control-btn control-min" onclick="closeApp()"></button>
+          <button class="control-btn control-max"></button>
+        </div>
+        <div class="window-title" style="color:white;">Teléfono</div>
+        <div class="close-mobile" onclick="closeApp()">
+          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div class="window-content" style="padding:0;background:#f2f2f7;">
+        <div class="phone-display" id="phone-display"></div>
+        <div class="phone-pad">
+          <button class="phone-btn" onclick="dialNumber('1')">1</button>
+          <button class="phone-btn" onclick="dialNumber('2')">2</button>
+          <button class="phone-btn" onclick="dialNumber('3')">3</button>
+          <button class="phone-btn" onclick="dialNumber('4')">4</button>
+          <button class="phone-btn" onclick="dialNumber('5')">5</button>
+          <button class="phone-btn" onclick="dialNumber('6')">6</button>
+          <button class="phone-btn" onclick="dialNumber('7')">7</button>
+          <button class="phone-btn" onclick="dialNumber('8')">8</button>
+          <button class="phone-btn" onclick="dialNumber('9')">9</button>
+          <button class="phone-btn" onclick="dialNumber('*')">*</button>
+          <button class="phone-btn" onclick="dialNumber('0')">0</button>
+          <button class="phone-btn" onclick="dialNumber('#')">#</button>
+        </div>
+        <div class="phone-actions">
+          <button class="call-btn" onclick="makeCall()">📞</button>
+                    <button class="clear-btn" onclick="clearDial()">⌫</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- APP: Messages -->
+    <div id="messages" class="window">
+      <div class="window-header" style="background:#34c759;">
+        <div class="window-controls">
+          <button class="control-btn control-close" onclick="closeApp()"></button>
+          <button class="control-btn control-min" onclick="closeApp()"></button>
+          <button class="control-btn control-max"></button>
+        </div>
+        <div class="window-title" style="color:white;">Mensajes</div>
+        <div class="close-mobile" onclick="closeApp()">
+          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div class="window-content" style="padding:0;background:#f2f2f7;">
+        <div class="messages-list">
+          <div class="message-item" onclick="showToast('Abriendo conversación con Ana')">
+            <div class="message-avatar" style="background:linear-gradient(135deg,#667eea,#764ba2);">A</div>
+            <div class="message-content">
+              <div class="message-name">Ana</div>
+              <div class="message-preview">¿Nos vemos mañana? 👋</div>
+            </div>
+            <div class="message-time">10:30</div>
+          </div>
+          <div class="message-item" onclick="showToast('Abriendo conversación con Mamá')">
+            <div class="message-avatar" style="background:linear-gradient(135deg,#f093fb,#f5576c);">M</div>
+            <div class="message-content">
+              <div class="message-name">Mamá</div>
+              <div class="message-preview">No olvides la cena 🍽️</div>
+            </div>
+            <div class="message-time">Ayer</div>
+          </div>
+          <div class="message-item" onclick="showToast('Abriendo conversación de Trabajo')">
+            <div class="message-avatar" style="background:linear-gradient(135deg,#4facfe,#00f2fe);">T</div>
+            <div class="message-content">
+              <div class="message-name">Trabajo</div>
+              <div class="message-preview">Reunión a las 3pm 📅</div>
+            </div>
+            <div class="message-time">Lun</div>
+          </div>
+        </div>
+        <button class="new-message-btn" onclick="showToast('Nuevo mensaje')">+</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="toast"></div>
+
+<script>
+let currentMode='mobile';
+let startY=0;
+let startX=0;
+let isSwiping=false;
+
+function selectDevice(mode){
+  currentMode=mode;
+  document.body.className=mode+'-mode';
+  document.getElementById('device-selector').classList.add('hidden');
+  document.getElementById('os-container').classList.add('active');
+  if(mode==='desktop')document.getElementById('unlock-hint').textContent='Haz clic para desbloquear';
+  setTimeout(updateClock,100);
+}
+
+function updateClock(){
+  const now=new Date();
+  const h=now.getHours().toString().padStart(2,'0');
+  const m=now.getMinutes().toString().padStart(2,'0');
+  const timeStr=h+':'+m;
+  document.getElementById('time').textContent=timeStr;
+  document.getElementById('statusTime').textContent=timeStr;
+  
+  const dias=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const diaSemana=dias[now.getDay()];
+  const dia=now.getDate();
+  const mes=meses[now.getMonth()];
+  document.getElementById('date').textContent=`${diaSemana}, ${dia} de ${mes}`;
+  
+  setTimeout(updateClock,1000);
+}
+
+function unlock(){
+  document.getElementById('lockscreen').classList.add('unlocked');
+  document.getElementById('home').classList.add('active');
+}
+
+function openApp(name){
+  const app=document.getElementById(name);
+  if(app){
+    app.classList.add('open');
+    app.style.transform='scale(1) translateY(0)';
+    app.style.opacity='1';
+  }
+}
+
+function closeApp(){
+  const openWindow=document.querySelector('.window.open');
+  if(!openWindow)return;
+  
+  if(currentMode==='mobile'){
+    openWindow.style.transition='transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s';
+    openWindow.style.transform='scale(0.9) translateY(100px)';
+    openWindow.style.opacity='0';
+    setTimeout(()=>{
+      openWindow.classList.remove('open');
+      openWindow.style.transform='';
+      openWindow.style.opacity='';
+    },400);
+  }else{
+    openWindow.style.transform='scale(0.9)';
+    openWindow.style.opacity='0';
+    setTimeout(()=>{
+      openWindow.classList.remove('open');
+      openWindow.style.transform='';
+      openWindow.style.opacity='';
+    },300);
+  }
+}
+
+function goHome(){
+  closeApp();
+}
+
+function toggleNotif(){
+  document.getElementById('notif').classList.toggle('show');
+  document.getElementById('control').classList.remove('show');
+}
+
+function toggleControl(){
+  document.getElementById('control').classList.toggle('show');
+  document.getElementById('notif').classList.remove('show');
+}
+
+// Touch gestures
+document.addEventListener('touchstart',e=>{
+  startY=e.touches[0].clientY;
+  startX=e.touches[0].clientX;
+  isSwiping=true;
+},{passive:true});
+
+document.addEventListener('touchmove',e=>{
+  if(!isSwiping)return;
+  const openWindow=document.querySelector('.window.open');
+  if(!openWindow||currentMode!=='mobile')return;
+  
+  const currentY=e.touches[0].clientY;
+  const diff=currentY-startY;
+  
+  if(diff>0&&startY<100){
+    e.preventDefault();
+    const progress=Math.min(diff/300,1);
+    openWindow.style.transform=`scale(${1-progress*0.1}) translateY(${diff*0.5}px)`;
+    openWindow.style.opacity=1-progress*0.5;
+  }
+},{passive:false});
+
+document.addEventListener('touchend',e=>{
+  if(!isSwiping)return;
+  isSwiping=false;
+  
+  const endY=e.changedTouches[0].clientY;
+  const diff=endY-startY;
+  const openWindow=document.querySelector('.window.open');
+  
+  if(openWindow&&currentMode==='mobile'&&startY<100&&diff>100){
+    closeApp();
+  }else if(openWindow&&currentMode==='mobile'){
+    openWindow.style.transition='transform 0.3s, opacity 0.3s';
+    openWindow.style.transform='scale(1) translateY(0)';
+    openWindow.style.opacity='1';
+    setTimeout(()=>{
+      openWindow.style.transition='';
+    },300);
+  }
+  
+  if(startY<50&&diff>50)toggleNotif();
+  else if(startY>window.innerHeight-50&&diff<-50)toggleControl();
+  else if(document.getElementById('notif').classList.contains('show')&&diff<-50)toggleNotif();
+  else if(document.getElementById('control').classList.contains('show')&&diff>50)toggleControl();
+},{passive:true});
+
+// Keyboard shortcuts
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape')closeApp();
+  if(e.key==='n'&&e.ctrlKey){e.preventDefault();toggleNotif();}
+  if(e.key==='c'&&e.ctrlKey){e.preventDefault();toggleControl();}
+});
+
+// App functions
+function toggleSwitch(el){
+  el.classList.toggle('active');
+}
+
+function showToast(message){
+  const toast=document.getElementById('toast');
+  toast.textContent=message;
+  toast.classList.add('show');
+  setTimeout(()=>{
+    toast.classList.remove('show');
+  },2000);
+}
+
+function toggleFlashlight(el){
+  el.classList.toggle('active');
+  if(el.classList.contains('active')){
+    document.body.style.filter='brightness(1.2)';
+    setTimeout(()=>document.body.style.filter='',100);
+  }
+}
+
+function adjustBrightness(e,track){
+  const rect=track.getBoundingClientRect();
+  const percent=(e.clientX-rect.left)/rect.width;
+  document.getElementById('brightness-bar').style.width=(percent*100)+'%';
+}
+
+function shutterEffect(el){
+  el.style.transform='scale(0.9)';
+  el.querySelector('::after')&&(el.querySelector('::after').style.transform='scale(0.6)');
+  setTimeout(()=>{
+    el.style.transform='scale(1)';
+  },150);
+  showToast('📸 Foto capturada');
+}
+
+function enlargePhoto(el){
+  if(el.classList.contains('enlarged')){
+    el.classList.remove('enlarged');
+  }else{
+    document.querySelectorAll('.gallery-item.enlarged').forEach(item=>item.classList.remove('enlarged'));
+    el.classList.add('enlarged');
+  }
+}
+
+function togglePlay(btn){
+  const isPlaying=btn.textContent==='⏸';
+  btn.textContent=isPlaying?'▶':'⏸';
+  btn.style.background=isPlaying?'#007AFF':'#ff2d55';
+}
+
+function seekMusic(e,track){
+  const rect=track.getBoundingClientRect();
+  const percent=(e.clientX-rect.left)/rect.width;
+  document.getElementById('music-progress').style.width=(percent*100)+'%';
+  track.querySelector('.progress-knob').style.left=(percent*100)+'%';
+}
+
+// Calculator
+let calcValue='0';
+let calcOperator='';
+let calcPrevious='';
+
+function calcInput(val){
+  const display=document.getElementById('calc-display');
+  if(val==='AC'){
+    calcValue='0';
+    calcOperator='';
+    calcPrevious='';
+    display.textContent='0';
+  }else if(val==='+/-'){
+    calcValue=String(parseFloat(calcValue)*-1);
+    display.textContent=calcValue;
+  }else if(val==='%'){
+    calcValue=String(parseFloat(calcValue)/100);
+    display.textContent=calcValue;
+  }else if(['+','-','*','/'].includes(val)){
+    calcOperator=val;
+    calcPrevious=calcValue;
+    calcValue='0';
+  }else if(val==='='){
+    if(calcOperator&&calcPrevious){
+      const prev=parseFloat(calcPrevious);
+      const current=parseFloat(calcValue);
+      let result=0;
+      switch(calcOperator){
+        case '+':result=prev+current;break;
+        case '-':result=prev-current;break;
+        case '*':result=prev*current;break;
+        case '/':result=prev/current;break;
+      }
+      calcValue=String(result).length>10?String(result).slice(0,10):String(result);
+      display.textContent=calcValue;
+      calcOperator='';
+      calcPrevious='';
+    }
+  }else{
+    if(calcValue==='0')calcValue='';
+    if(calcValue.length<10){
+      calcValue+=val;
+      display.textContent=calcValue;
+    }
+  }
+}
+
+// Phone
+let dialValue='';
+function dialNumber(num){
+  if(dialValue.length<15){
+    dialValue+=num;
+    document.getElementById('phone-display').textContent=dialValue;
+  }
+}
+
+function clearDial(){
+  dialValue=dialValue.slice(0,-1);
+  document.getElementById('phone-display').textContent=dialValue||'';
+}
+
+function makeCall(){
+  if(dialValue){
+    showToast(`Llamando a ${dialValue}...`);
+    setTimeout(()=>showToast('📞 Llamada finalizada'),3000);
+  }else{
+    showToast('Ingresa un número');
+  }
+}
+
+// Initialize
+updateClock();
+</script>
+
+</body>
+</html>
