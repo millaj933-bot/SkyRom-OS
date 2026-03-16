@@ -1,1217 +1,1245 @@
-// build.gradle.kts (Project level)
-plugins {
-    id("com.android.application") version "8.2.0" apply false
-    id("org.jetbrains.kotlin.android") version "1.9.20" apply false
-}
-// app/build.gradle.kts
-plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ColorOS Launcher</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
 
-android {
-    namespace = "com.coloros.launcher"
-    compileSdk = 34
+        :root {
+            --coloros-green: #00B578;
+            --coloros-blue: #2196F3;
+            --coloros-orange: #FF9800;
+            --bg-light: #F5FBF6;
+            --bg-dark: #191C1A;
+            --glass-light: rgba(255, 255, 255, 0.25);
+            --glass-dark: rgba(28, 28, 30, 0.7);
+            --glass-border-light: rgba(255, 255, 255, 0.3);
+            --glass-border-dark: rgba(255, 255, 255, 0.1);
+        }
 
-    defaultConfig {
-        applicationId = "com.coloros.launcher"
-        minSdk = 26
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0-ColorOS-Edition"
-    }
+        body {
+            overflow: hidden;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            width: 100vw;
+        }
 
-    buildFeatures {
-        compose = true
-    }
+        /* LOCK SCREEN */
+        #lockScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.5"
-    }
+        #lockScreen.unlocked {
+            opacity: 0;
+            transform: translateY(-100%);
+            pointer-events: none;
+        }
 
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
-}
+        .lock-time {
+            font-size: 80px;
+            font-weight: 200;
+            color: white;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
 
-dependencies {
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
-    implementation("androidx.activity:activity-compose:1.8.2")
-    
-    // Compose BOM
-    implementation(platform("androidx.compose:compose-bom:2024.02.00"))
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-graphics")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3")
-    
-    // Animation
-    implementation("androidx.compose.animation:animation:1.6.1")
-    implementation("androidx.compose.animation:animation-graphics:1.6.1")
-    
-    // Biometric (Fingerprint)
-    implementation("androidx.biometric:biometric:1.1.0")
-    
-    // ViewModel
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
-    
-    // Navigation
-    implementation("androidx.navigation:navigation-compose:2.7.7")
-    
-    // Icons Extended
-    implementation("androidx.compose.material:material-icons-extended:1.6.1")
-    
-    // Accompanist (System UI)
-    implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
-    
-    // Blur/Graphics
-    implementation("com.github.skydoves:cloudy:0.1.2")
-}
-// app/src/main/java/com/coloros/launcher/MainActivity.kt
-package com.coloros.launcher
+        .lock-date {
+            font-size: 18px;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 60px;
+        }
 
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.ui.Modifier
-import androidx.core.view.WindowCompat
-import com.coloros.launcher.ui.screens.LauncherNavigation
-import com.coloros.launcher.ui.theme.ColorOSLauncherTheme
+        .fingerprint-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
 
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+        .fingerprint-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--coloros-green), #00d68f);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 32px rgba(0, 181, 120, 0.4);
+            position: relative;
+            z-index: 10;
+            transition: transform 0.2s;
+        }
+
+        .fingerprint-btn:active {
+            transform: scale(0.95);
+        }
+
+        .fingerprint-btn.scanning {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 8px 32px rgba(0, 181, 120, 0.4); }
+            50% { transform: scale(1.1); box-shadow: 0 12px 40px rgba(0, 181, 120, 0.6); }
+        }
+
+        .fingerprint-icon {
+            width: 40px;
+            height: 40px;
+            fill: white;
+        }
+
+        .scan-ring {
+            position: absolute;
+            border: 2px solid var(--coloros-green);
+            border-radius: 50%;
+            opacity: 0;
+        }
+
+        .scanning .scan-ring {
+            animation: scan 1.5s infinite;
+        }
+
+        .scan-ring:nth-child(2) { animation-delay: 0.3s; }
+        .scan-ring:nth-child(3) { animation-delay: 0.6s; }
+
+        @keyframes scan {
+            0% { width: 80px; height: 80px; opacity: 0.6; }
+            100% { width: 140px; height: 140px; opacity: 0; }
+        }
+
+        .unlock-text {
+            margin-top: 30px;
+            color: rgba(255,255,255,0.6);
+            font-size: 14px;
+        }
+
+        /* HOME SCREEN */
+        #homeScreen {
+            width: 100%;
+            height: 100%;
+            padding: 50px 20px 100px;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .status-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 100;
+        }
+
+        .time-display {
+            font-size: 16px;
+        }
+
+        .status-icons {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .widget-container {
+            margin-bottom: 30px;
+        }
+
+        .weather-widget {
+            background: var(--glass-dark);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border-dark);
+            border-radius: 24px;
+            padding: 20px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .weather-widget::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .weather-temp {
+            font-size: 48px;
+            font-weight: 300;
+        }
+
+        .weather-desc {
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        /* APP GRID */
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .app-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+            position: relative;
+        }
+
+        .app-item.dragging {
+            z-index: 1000;
+            transform: scale(1.1);
+        }
+
+        .app-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 18px;
+            background: var(--glass-dark);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+
+        .app-item:active .app-icon {
+            transform: scale(0.9);
+        }
+
+        .app-name {
+            color: white;
+            font-size: 11px;
+            text-align: center;
+            max-width: 70px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+
+        /* DOCK */
+        .dock {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            height: 80px;
+            background: var(--glass-dark);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border-dark);
+            border-radius: 30px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 99;
+        }
+
+        .dock-item {
+            width: 55px;
+            height: 55px;
+            border-radius: 16px;
+            background: rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .dock-item:active {
+            transform: scale(0.9);
+        }
+
+        .dock-item.primary {
+            background: linear-gradient(135deg, var(--coloros-green), #00d68f);
+            box-shadow: 0 4px 15px rgba(0, 181, 120, 0.4);
+        }
+
+        /* APP LAUNCH ANIMATION */
+        .app-launch-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            z-index: 500;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .app-launch-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .launch-icon {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 18px;
+            background: var(--coloros-green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* SETTINGS PANEL */
+        .settings-panel {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 80%;
+            height: 100%;
+            background: var(--glass-dark);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            z-index: 200;
+            transition: right 0.3s ease;
+            padding: 60px 20px 20px;
+            overflow-y: auto;
+        }
+
+        .settings-panel.open {
+            right: 0;
+        }
+
+        .settings-header {
+            color: white;
+            font-size: 24px;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+
+        .setting-item {
+            background: rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .toggle {
+            width: 50px;
+            height: 28px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 14px;
+            position: relative;
+            transition: background 0.3s;
+        }
+
+        .toggle.active {
+            background: var(--coloros-green);
+        }
+
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+        }
+
+        .toggle.active::after {
+            transform: translateX(22px);
+        }
+
+        .close-settings {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        /* PARALLEL ANIMATION ELEMENTS */
+        .floating-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 50%;
+            animation: float 10s infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* ADD APP MODAL */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 300;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--glass-dark);
+            backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border-dark);
+            border-radius: 24px;
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+            color: white;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .app-list {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .app-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 12px;
+            transition: background 0.2s;
+        }
+
+        .app-option:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .app-option-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--coloros-blue), #64b5f6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .app-option-name {
+            font-size: 10px;
+            text-align: center;
+        }
+
+        .close-modal {
+            margin-top: 20px;
+            width: 100%;
+            padding: 12px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        /* FULLSCREEN MODE */
+        body.fullscreen .status-bar,
+        body.fullscreen .dock {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* ACTION BUTTON STYLES */
+        .action-button {
+            position: fixed;
+            bottom: 120px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--coloros-orange), #ffb74d);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(255, 152, 0, 0.4);
+            z-index: 98;
+            transition: transform 0.3s;
+        }
+
+        .action-button:active {
+            transform: scale(0.9);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PARTICLES BACKGROUND -->
+    <div class="floating-particles" id="particles"></div>
+
+    <!-- LOCK SCREEN -->
+    <div id="lockScreen">
+        <div class="lock-time" id="lockTime">12:00</div>
+        <div class="lock-date" id="lockDate">Lunes, 1 de Enero</div>
         
-        // Full screen mode
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        enableEdgeToEdge()
+        <div class="fingerprint-container" id="fingerprintBtn">
+            <div class="scan-ring"></div>
+            <div class="scan-ring"></div>
+            <div class="scan-ring"></div>
+            <div class="fingerprint-btn">
+                <svg class="fingerprint-icon" viewBox="0 0 24 24">
+                    <path d="M17.81 4.47c-.08 0-.16-.02-.23-.06C15.66 3.42 14 3 12.01 3c-1.98 0-3.86.47-5.57 1.41-.24.13-.54.04-.68-.2-.13-.24-.04-.55.2-.68C7.82 2.52 9.86 2 12.01 2c2.13 0 3.99.47 6.03 1.52.25.13.34.43.21.67-.09.18-.26.28-.44.28zM3.5 9.72c-.1 0-.2-.03-.29-.09-.23-.16-.28-.47-.12-.7.99-1.4 2.25-2.5 3.75-3.27C9.98 4.04 14 4.03 17.15 5.65c1.5.77 2.76 1.86 3.75 3.25.16.22.11.54-.12.7-.23.16-.54.11-.7-.12-.9-1.26-2.04-2.25-3.39-2.94-2.87-1.47-6.54-1.47-9.4.01-1.36.7-2.5 1.7-3.4 2.96-.08.14-.23.21-.39.21zm6.25 12.07c-.13 0-.26-.05-.35-.15-.87-.87-1.34-1.43-2.01-2.64-.69-1.23-1.05-2.73-1.05-4.34 0-2.97 2.54-5.39 5.66-5.39s5.66 2.42 5.66 5.39c0 .28-.22.5-.5.5s-.5-.22-.5-.5c0-2.42-2.09-4.39-4.66-4.39-2.57 0-4.66 1.97-4.66 4.39 0 1.44.32 2.77.93 3.85.64 1.15 1.08 1.64 1.85 2.42.19.2.19.51 0 .71-.11.1-.24.15-.37.15zm7.17-1.85c-1.19 0-2.24-.3-3.1-.89-1.49-1.01-2.38-2.65-2.38-4.39 0-.28.22-.5.5-.5s.5.22.5.5c0 1.41.72 2.74 1.94 3.56.71.48 1.54.71 2.54.71.24 0 .64-.03 1.04-.1.27-.05.53.13.58.41.05.27-.13.53-.41.58-.57.11-1.07.12-1.21.12zM14.91 22c-.04 0-.09-.01-.13-.02-1.59-.44-2.63-1.03-3.72-2.1-1.4-1.39-2.17-3.24-2.17-5.22 0-1.62 1.38-2.94 3.08-2.94 1.7 0 3.08 1.32 3.08 2.94 0 1.07.93 1.94 2.08 1.94.28 0 .5.22.5.5s-.22.5-.5.5c-1.38 0-2.5-1.12-2.5-2.5 0-1.07-.93-1.94-2.08-1.94-1.15 0-2.08.87-2.08 1.94 0 1.71.66 3.31 1.87 4.51.95.94 1.86 1.46 3.27 1.85.27.07.42.35.35.61-.05.23-.26.38-.47.38z"/>
+                </svg>
+            </div>
+        </div>
         
-        setContent {
-            ColorOSLauncherTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    LauncherNavigation()
+        <div class="unlock-text">Toca para desbloquear</div>
+    </div>
+
+    <!-- STATUS BAR -->
+    <div class="status-bar">
+        <div class="time-display" id="statusTime">12:00</div>
+        <div class="status-icons">
+            <span>📶</span>
+            <span>📡</span>
+            <span>🔋</span>
+        </div>
+    </div>
+
+    <!-- HOME SCREEN -->
+    <div id="homeScreen">
+        <!-- WEATHER WIDGET -->
+        <div class="widget-container">
+            <div class="weather-widget">
+                <div class="weather-temp">24°</div>
+                <div class="weather-desc">Parcialmente nublado • Máx: 28°</div>
+            </div>
+        </div>
+
+        <!-- APP GRID -->
+        <div class="app-grid" id="appGrid">
+            <!-- Apps will be generated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- DOCK -->
+    <div class="dock">
+        <div class="dock-item" onclick="openSearch()">🔍</div>
+        <div class="dock-item primary" onclick="toggleSettings()">⚙️</div>
+        <div class="dock-item" onclick="openAddApp()">➕</div>
+    </div>
+
+    <!-- ACTION BUTTON -->
+    <div class="action-button" onclick="toggleFullscreen()">⛶</div>
+
+    <!-- APP LAUNCH OVERLAY -->
+    <div class="app-launch-overlay" id="launchOverlay">
+        <div class="launch-icon" id="launchIcon">📱</div>
+    </div>
+
+    <!-- SETTINGS PANEL -->
+    <div class="settings-panel" id="settingsPanel">
+        <div class="close-settings" onclick="toggleSettings()">✕</div>
+        <div class="settings-header">Configuración</div>
+        
+        <div class="setting-item" onclick="toggleFullscreen()">
+            <span>Modo Pantalla Completa</span>
+            <div class="toggle" id="fullscreenToggle"></div>
+        </div>
+        
+        <div class="setting-item" onclick="toggleTheme()">
+            <span>Tema Oscuro</span>
+            <div class="toggle" id="themeToggle"></div>
+        </div>
+        
+        <div class="setting-item">
+            <span>Animaciones Fluidas</span>
+            <div class="toggle active"></div>
+        </div>
+        
+        <div class="setting-item">
+            <span>Efecto Liquid Glass</span>
+            <div class="toggle active"></div>
+        </div>
+        
+        <div class="setting-item" onclick="lockDevice()">
+            <span>Bloquear Dispositivo</span>
+            <span>🔒</span>
+        </div>
+    </div>
+
+    <!-- ADD APP MODAL -->
+    <div class="modal" id="addAppModal">
+        <div class="modal-content">
+            <div class="modal-title">Agregar Aplicación</div>
+            <div class="app-list" id="appList">
+                <!-- Generated by JS -->
+            </div>
+            <button class="close-modal" onclick="closeAddApp()">Cerrar</button>
+        </div>
+    </div>
+
+    <script>
+        // APPS DATA
+        let apps = [
+            { id: 1, name: 'Teléfono', icon: '📞', color: '#00B578' },
+            { id: 2, name: 'Mensajes', icon: '💬', color: '#2196F3' },
+            { id: 3, name: 'Cámara', icon: '📷', color: '#FF5722' },
+            { id: 4, name: 'Fotos', icon: '🖼️', color: '#E91E63' },
+            { id: 5, name: 'Config', icon: '⚙️', color: '#607D8B' },
+            { id: 6, name: 'Música', icon: '🎵', color: '#9C27B0' },
+            { id: 7, name: 'Reloj', icon: '⏰', color: '#FF9800' },
+            { id: 8, name: 'Clima', icon: '🌤️', color: '#03A9F4' },
+            { id: 9, name: 'Maps', icon: '🗺️', color: '#4CAF50' },
+            { id: 10, name: 'Mail', icon: '📧', color: '#F44336' },
+            { id: 11, name: 'Calc', icon: '🧮', color: '#795548' },
+            { id: 12, name: 'Notas', icon: '📝', color: '#FFEB3B' }
+        ];
+
+        let availableApps = [
+            { name: 'Netflix', icon: '🎬', color: '#E50914' },
+            { name: 'Spotify', icon: '🎧', color: '#1DB954' },
+            { name: 'YouTube', icon: '▶️', color: '#FF0000' },
+            { name: 'WhatsApp', icon: '💚', color: '#25D366' },
+            { name: 'Instagram', icon: '📸', color: '#E4405F' },
+            { name: 'Twitter', icon: '🐦', color: '#1DA1F2' },
+            { name: 'Facebook', icon: '👤', color: '#1877F2' },
+            { name: 'TikTok', icon: '🎵', color: '#000000' }
+        ];
+
+        let draggedItem = null;
+        let draggedIndex = null;
+
+        // INITIALIZE
+        document.addEventListener('DOMContentLoaded', () => {
+            updateTime();
+            setInterval(updateTime, 1000);
+            renderApps();
+            renderParticles();
+            setupFingerprint();
+        });
+
+        // TIME UPDATE
+        function updateTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const timeStr = `${hours}:${minutes}`;
+            
+            document.getElementById('lockTime').textContent = timeStr;
+            document.getElementById('statusTime').textContent = timeStr;
+            
+            const options = { weekday: 'long', day: 'numeric', month: 'long' };
+            document.getElementById('lockDate').textContent = now.toLocaleDateString('es-ES', options);
+        }
+
+        // FINGERPRINT
+        function setupFingerprint() {
+            const btn = document.getElementById('fingerprintBtn');
+            btn.addEventListener('click', () => {
+                btn.classList.add('scanning');
+                setTimeout(() => {
+                    unlockDevice();
+                }, 1500);
+            });
+        }
+
+        function unlockDevice() {
+            document.getElementById('lockScreen').classList.add('unlocked');
+        }
+
+        function lockDevice() {
+            document.getElementById('lockScreen').classList.remove('unlocked');
+            document.getElementById('fingerprintBtn').classList.remove('scanning');
+            toggleSettings();
+        }
+
+        // RENDER APPS
+        function renderApps() {
+            const grid = document.getElementById('appGrid');
+            grid.innerHTML = '';
+            
+            apps.forEach((app, index) => {
+                const item = document.createElement('div');
+                item.className = 'app-item';
+                item.draggable = true;
+                item.dataset.index = index;
+                item.innerHTML = `
+                    <div class="app-icon" style="background: linear-gradient(135deg, ${app.color}, ${adjustColor(app.color, 20)})">
+                        ${app.icon}
+                    </div>
+                    <div class="app-name">${app.name}</div>
+                `;
+                
+                // Drag events
+                item.addEventListener('dragstart', handleDragStart);
+                item.addEventListener('dragover', handleDragOver);
+                item.addEventListener('drop', handleDrop);
+                item.addEventListener('dragend', handleDragEnd);
+                
+                // Click to launch
+                item.addEventListener('click', () => launchApp(app));
+                
+                grid.appendChild(item);
+            });
+        }
+
+        // DRAG AND DROP
+        function handleDragStart(e) {
+            draggedItem = this;
+            draggedIndex = parseInt(this.dataset.index);
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            if (this === draggedItem) return;
+            
+            const dropIndex = parseInt(this.dataset.index);
+            const temp = apps[draggedIndex];
+            apps.splice(draggedIndex, 1);
+            apps.splice(dropIndex, 0, temp);
+            
+            renderApps();
+        }
+
+        function handleDragEnd() {
+            this.classList.remove('dragging');
+            draggedItem = null;
+            draggedIndex = null;
+        }
+
+        // APP LAUNCH ANIMATION
+        function launchApp(app) {
+            const overlay = document.getElementById('launchOverlay');
+            const icon = document.getElementById('launchIcon');
+            
+            icon.textContent = app.icon;
+            icon.style.background = app.color;
+            overlay.classList.add('active');
+            
+            // Parallel animation
+            icon.style.top = '50%';
+            icon.style.left = '50%';
+            icon.style.transform = 'translate(-50%, -50%) scale(1)';
+            
+            setTimeout(() => {
+                icon.style.transform = 'translate(-50%, -50%) scale(20)';
+                icon.style.opacity = '0';
+            }, 100);
+            
+            setTimeout(() => {
+                overlay.classList.remove('active');
+                icon.style.transform = 'translate(-50%, -50%) scale(1)';
+                icon.style.opacity = '1';
+                alert(`Abriendo ${app.name}...`);
+            }, 600);
+        }
+
+        // SETTINGS
+        function toggleSettings() {
+            document.getElementById('settingsPanel').classList.toggle('open');
+        }
+
+        function toggleFullscreen() {
+            document.body.classList.toggle('fullscreen');
+            document.getElementById('fullscreenToggle').classList.toggle('active');
+        }
+
+        function toggleTheme() {
+            document.getElementById('themeToggle').classList.toggle('active');
+        }
+
+        // ADD APP
+        function openAddApp() {
+            const list = document.getElementById('appList');
+            list.innerHTML = '';
+            
+            availableApps.forEach(app => {
+                const div = document.createElement('div');
+                div.className = 'app-option';
+                div.innerHTML = `
+                    <div class="app-option-icon" style="background: ${app.color}">${app.icon}</div>
+                    <div class="app-option-name">${app.name}</div>
+                `;
+                div.onclick = () => addApp(app);
+                list.appendChild(div);
+            });
+            
+            document.getElementById('addAppModal').classList.add('show');
+        }
+
+        function closeAddApp() {
+            document.getElementById('addAppModal').classList.remove('show');
+        }
+
+        function addApp(app) {
+            const newApp = {
+                id: Date.now(),
+                name: app.name,
+                icon: app.icon,
+                color: app.color
+            };
+            apps.push(newApp);
+            renderApps();
+            closeAddApp();
+        }
+
+        // SEARCH
+        function openSearch() {
+            const query = prompt('Buscar aplicaciones:');
+            if (query) {
+                const found = apps.filter(a => a.name.toLowerCase().includes(query.toLowerCase()));
+                if (found.length > 0) {
+                    alert(`Encontrado: ${found.map(a => a.name).join(', ')}`);
+                } else {
+                    alert('No se encontraron aplicaciones');
                 }
             }
         }
-    }
-}// app/src/main/java/com/coloros/launcher/ui/theme/Theme.kt
-package com.coloros.launcher.ui.theme
 
-import android.app.Activity
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
-import androidx.core.view.WindowCompat
-
-// Paleta de colores ColorOS 14
-private val ColorOSLight = lightColorScheme(
-    primary = Green40,
-    onPrimary = White,
-    primaryContainer = Green90,
-    onPrimaryContainer = Green10,
-    secondary = Blue40,
-    onSecondary = White,
-    secondaryContainer = Blue90,
-    onSecondaryContainer = Blue10,
-    tertiary = Orange40,
-    onTertiary = White,
-    tertiaryContainer = Orange90,
-    onTertiaryContainer = Orange10,
-    error = Red40,
-    background = Gray99,
-    onBackground = Gray10,
-    surface = Gray99,
-    onSurface = Gray10,
-    surfaceVariant = Gray90,
-    onSurfaceVariant = Gray30,
-    outline = Gray50
-)
-
-private val ColorOSDark = darkColorScheme(
-    primary = Green80,
-    onPrimary = Green20,
-    primaryContainer = Green30,
-    onPrimaryContainer = Green90,
-    secondary = Blue80,
-    onSecondary = Blue20,
-    secondaryContainer = Blue30,
-    onSecondaryContainer = Blue90,
-    tertiary = Orange80,
-    onTertiary = Orange20,
-    tertiaryContainer = Orange30,
-    onTertiaryContainer = Orange90,
-    error = Red80,
-    background = Gray10,
-    onBackground = Gray90,
-    surface = Gray10,
-    onSurface = Gray90,
-    surfaceVariant = Gray30,
-    onSurfaceVariant = Gray80,
-    outline = Gray60
-)
-
-@Composable
-fun ColorOSLauncherTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false, // ColorOS usa sus propios colores, no dynamic
-    content: @Composable () -> Unit
-) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> ColorOSDark
-        else -> ColorOSLight
-    }
-    
-    val view = LocalView.current
-    if (!view.isInEditMode) {
-        SideEffect {
-            val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.background.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
-        }
-    }
-
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = ColorOSTypography,
-        content = content
-    )
-}
-// app/src/main/java/com/coloros/launcher/ui/theme/Color.kt
-package com.coloros.launcher.ui.theme
-
-import androidx.compose.ui.graphics.Color
-
-// ColorOS 14 Official Palette
-val Green40 = Color(0xFF00B578) // ColorOS Green
-val Green80 = Color(0xFF5DDFA6)
-val Green90 = Color(0xFFB8F5D9)
-val Green10 = Color(0xFF002110)
-val Green20 = Color(0xFF003920)
-val Green30 = Color(0xFF005230)
-
-val Blue40 = Color(0xFF2196F3)
-val Blue80 = Color(0xFF9CCAFF)
-val Blue90 = Color(0xFFD1E4FF)
-val Blue10 = Color(0xFF001D36)
-val Blue20 = Color(0xFF003258)
-val Blue30 = Color(0xFF00497D)
-
-val Orange40 = Color(0xFFFF9800)
-val Orange80 = Color(0xFFFFB95C)
-val Orange90 = Color(0xFFFFDDB0)
-val Orange10 = Color(0xFF2A1800)
-val Orange20 = Color(0xFF462B00)
-val Orange30 = Color(0xFF643F00)
-
-val Red40 = Color(0xFFBA1A1A)
-val Red80 = Color(0xFFFFB4AB)
-
-val Gray10 = Color(0xFF191C1A)
-val Gray30 = Color(0xFF414944)
-val Gray50 = Color(0xFF717974)
-val Gray60 = Color(0xFF8B938E)
-val Gray80 = Color(0xFFC1C9BF)
-val Gray90 = Color(0xFFE0E3DF)
-val Gray99 = Color(0xFFF5FBF6)
-
-val White = Color(0xFFFFFFFF)
-
-// Liquid Glass Colors
-val LiquidGlassLight = Color(0xCCFFFFFF)
-val LiquidGlassDark = Color(0xCC1C1C1E)
-val LiquidGlassBorderLight = Color(0x40FFFFFF)
-val LiquidGlassBorderDark = Color(0x40FFFFFF)
-// app/src/main/java/com/coloros/launcher/ui/theme/Type.kt
-package com.coloros.launcher.ui.theme
-
-import androidx.compose.material3.Typography
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
-
-val ColorOSTypography = Typography(
-    displayLarge = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Light,
-        fontSize = 57.sp,
-        lineHeight = 64.sp,
-        letterSpacing = (-0.25).sp
-    ),
-    displayMedium = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Light,
-        fontSize = 45.sp,
-        lineHeight = 52.sp,
-        letterSpacing = 0.sp
-    ),
-    headlineLarge = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 32.sp,
-        lineHeight = 40.sp,
-        letterSpacing = 0.sp
-    ),
-    titleLarge = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Medium,
-        fontSize = 22.sp,
-        lineHeight = 28.sp,
-        letterSpacing = 0.sp
-    ),
-    bodyLarge = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.5.sp
-    ),
-    labelLarge = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight.FontWeight.Medium,
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
-        letterSpacing = 0.1.sp
-    )
-)
-// app/src/main/java/com/coloros/launcher/ui/components/LiquidGlassCard.kt
-package com.coloros.launcher.ui.components
-
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.TileMode
-import androidx.compose.ui.unit.dp
-import com.coloros.launcher.ui.theme.LiquidGlassDark
-import com.coloros.launcher.ui.theme.LiquidGlassLight
-import com.coloros.launcher.ui.theme.LiquidGlassBorderDark
-import com.coloros.launcher.ui.theme.LiquidGlassBorderLight
-
-@Composable
-fun LiquidGlassCard(
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
-) {
-    val infiniteTransition = rememberInfiniteTransition(label = "liquid")
-    
-    // Animación de brillo líquido
-    val shimmerTranslate by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1000f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(3000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "shimmer"
-    )
-    
-    val isDark = !MaterialTheme.colorScheme.background.luminance().let { it > 0.5 }
-    
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-            .clip(RoundedCornerShape(24.dp))
-            .border(
-                width = 1.dp,
-                color = if (isDark) LiquidGlassBorderDark else LiquidGlassBorderLight,
-                shape = RoundedCornerShape(24.dp)
-            )
-            .drawBehind {
-                // Efecto de gradiente líquido animado
-                drawRect(
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            if (isDark) LiquidGlassDark.copy(alpha = 0.6f) 
-                            else LiquidGlassLight.copy(alpha = 0.6f),
-                            if (isDark) LiquidGlassDark.copy(alpha = 0.3f)
-                            else LiquidGlassLight.copy(alpha = 0.3f),
-                            if (isDark) LiquidGlassDark.copy(alpha = 0.6f)
-                            else LiquidGlassLight.copy(alpha = 0.6f)
-                        ),
-                        start = Offset(shimmerTranslate - 500f, 0f),
-                        end = Offset(shimmerTranslate + 500f, size.height),
-                        tileMode = TileMode.Clamp
-                    )
-                )
-            },
-        colors = CardDefaults.cardColors(
-            containerColor = if (isDark) 
-                LiquidGlassDark.copy(alpha = 0.4f)
-            else 
-                LiquidGlassLight.copy(alpha = 0.4f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            content()
-        }
-    }
-}
-
-// Extensión para calcular luminancia
-private fun Color.luminance(): Float {
-    val r = red * 0.299f
-    val g = green * 0.587f
-    val b = blue * 0.114f
-    return r + g + b
-}
-// app/src/main/java/com/coloros/launcher/ui/components/FingerprintButton.kt
-package com.coloros.launcher.ui.components
-
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Fingerprint
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.delay
-
-@Composable
-fun FingerprintButton(
-    onAuthenticated: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var isScanning by remember { mutableStateOf(false) }
-    var isSuccess by remember { mutableStateOf(false) }
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    
-    // Animaciones
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.95f else if (isScanning) 1.1f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-        label = "scale"
-    )
-    
-    val pulseAnim = rememberInfiniteTransition(label = "pulse")
-    val pulseScale by pulseAnim.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.3f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "pulse"
-    )
-    
-    val pulseAlpha by pulseAnim.animateFloat(
-        initialValue = 0.6f,
-        targetValue = 0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "pulseAlpha"
-    )
-    
-    LaunchedEffect(isScanning) {
-        if (isScanning) {
-            delay(1500) // Simula escaneo
-            isSuccess = true
-            delay(300)
-            onAuthenticated()
-        }
-    }
-    
-    Box(
-        modifier = modifier.size(120.dp),
-        contentAlignment = Alignment.Center
-    ) {
-// app/src/main/java/com/coloros/launcher/ui/components/DraggableGrid.kt
-package com.coloros.launcher.ui.components
-
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
-import com.coloros.launcher.data.model.AppInfo
-import kotlin.math.roundToInt
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun DraggableAppGrid(
-    apps: List<AppInfo>,
-    onMove: (Int, Int) -> Unit,
-    onAppClick: (AppInfo) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var draggedItem by remember { mutableStateOf<AppInfo?>(null) }
-    var draggedOffset by remember { mutableStateOf(Offset.Zero) }
-    var draggedIndex by remember { mutableStateOf(-1) }
-    
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(4),
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        items(apps, key = { it.packageName }) { app ->
-            val isDragged = draggedItem == app
-            val scale by animateFloatAsState(
-                targetValue = if (isDragged) 1.15f else 1f,
-                label = "scale"
-            )
-            val elevation by animateDpAsState(
-                targetValue = if (isDragged) 16.dp else 0.dp,
-                label = "elevation"
-            )
-            
-            Box(
-                modifier = Modifier
-                    .aspectRatio(0.8f)
-                    .zIndex(if (isDragged) 1f else 0f)
-                    .scale(scale)
-                    .offset { 
-                        if (isDragged) {
-                            IntOffset(
-                                draggedOffset.x.roundToInt(),
-                                draggedOffset.y.roundToInt()
-                            )
-                        } else {
-                            IntOffset(0, 0)
-                        }
-                    }
-                    .shadow(elevation, RoundedCornerShape(16.dp))
-                    .background(
-                        if (isDragged) 
-                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f)
-                        else 
-                            Color.Transparent,
-                        RoundedCornerShape(16.dp)
-                    )
-                    .pointerInput(app) {
-                        detectDragGesturesAfterLongPress(
-                            onDragStart = {
-                                draggedItem = app
-                                draggedIndex = apps.indexOf(app)
-                            },
-                            onDrag = { change, dragAmount ->
-                                change.consume()
-                                draggedOffset += dragAmount
-                            },
-                            onDragEnd = {
-                                // Calcular nueva posición
-                                val itemWidth = size.width.toFloat()
-                                val itemHeight = size.height.toFloat()
-                                val column = (draggedOffset.x / itemWidth).roundToInt()
-                                val row = (draggedOffset.y / itemHeight).roundToInt()
-                                val newIndex = draggedIndex + column + (row * 4)
-                                
-                                if (newIndex in apps.indices && newIndex != draggedIndex) {
-                                    onMove(draggedIndex, newIndex)
-                                }
-                                
-                                draggedItem = null
-                                draggedOffset = Offset.Zero
-                                draggedIndex = -1
-                            }
-                        )
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                AppIconItem(
-                    app = app,
-                    onClick = { if (!isDragged) onAppClick(app) }
-                )
+        // PARTICLES
+        function renderParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 20; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.style.left = Math.random() * 100 + '%';
+                p.style.animationDelay = Math.random() * 10 + 's';
+                p.style.animationDuration = (10 + Math.random() * 10) + 's';
+                container.appendChild(p);
             }
         }
-    }
-}
 
-@Composable
-private fun AppIconItem(
-    app: AppInfo,
-    onClick: () -> Unit
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .fillMaxSize()
-            .clickable { onClick() }
-            .padding(4.dp)
-    ) {
-        // Icono con efecto Liquid Glass
-        LiquidGlassCard(
-            modifier = Modifier
-                .size(56.dp)
-                .weight(1f)
-        ) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = app.icon,
-                    contentDescription = app.name,
-                    modifier = Modifier.size(32.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
+        // COLOR UTILS
+        function adjustColor(color, amount) {
+            const num = parseInt(color.replace('#', ''), 16);
+            const r = Math.min(255, Math.max(0, (num >> 16) + amount));
+            const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amount));
+            const b = Math.min(255, Math.max(0, (num & 0x0000FF) + amount));
+            return `#${(0x1000000 + r * 0x10000 + g * 0x100 + b).toString(16).slice(1)}`;
         }
-        
-        Spacer(modifier = Modifier.height(4.dp))
-        
-        Text(
-            text = app.name,
-            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-            color = MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.fillMaxWidth()
-        )
-    }
-}
-      // app/src/main/java/com/coloros/launcher/data/model/AppInfo.kt
-package com.coloros.launcher.data.model
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.ui.graphics.vector.ImageVector
+        // Touch support for mobile
+        let touchStartX, touchStartY;
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        });
 
-data class AppInfo(
-    val name: String,
-    val packageName: String,
-    val icon: ImageVector,
-    val isSystemApp: Boolean = false
-)
+        document.addEventListener('touchmove', e => {
+            if (!touchStartX || !touchStartY) return;
+            const touchEndX = e.touches[0].clientX;
+            const touchEndY = e.touches[0].clientY;
+            const diffX = touchStartX - touchEndX;
+            const diffY = touchStartY - touchEndY;
 
-// Datos de ejemplo estilo ColorOS
-val sampleApps = listOf(
-    AppInfo("Teléfono", "com.android.dialer", Icons.Default.Phone),
-    AppInfo("Mensajes", "com.android.messages", Icons.Default.Message),
-    AppInfo("Cámara", "com.android.camera", Icons.Default.Camera),
-    AppInfo("Fotos", "com.android.gallery", Icons.Default.Photo),
-    AppInfo("Configuración", "com.android.settings", Icons.Default.Settings),
-    AppInfo("Calculadora", "com.android.calculator", Icons.Default.Calculate),
-    AppInfo("Calendario", "com.android.calendar", Icons.Default.CalendarToday),
-    AppInfo("Reloj", "com.android.clock", Icons.Default.AccessTime),
-    AppInfo("Música", "com.android.music", Icons.Default.MusicNote),
-    AppInfo("Archivos", "com.android.files", Icons.Default.Folder),
-    AppInfo("Clima", "com.android.weather", Icons.Default.WbSunny),
-    AppInfo("Maps", "com.android.maps", Icons.Default.Map),
-    AppInfo("Correo", "com.android.email", Icons.Default.Email),
-    AppInfo("Navegador", "com.android.browser", Icons.Default.Language),
-    AppInfo("Contactos", "com.android.contacts", Icons.Default.Contacts),
-    AppInfo("Notas", "com.android.notes", Icons.Default.Note)
-)// app/src/main/java/com/coloros/launcher/ui/screens/HomeScreen.kt
-package com.coloros.launcher.ui.screens
-
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Apps
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.coloros.launcher.data.model.sampleApps
-import com.coloros.launcher.ui.components.DraggableAppGrid
-import com.coloros.launcher.ui.components.LiquidGlassCard
-import com.coloros.launcher.viewmodel.LauncherViewModel
-import java.text.SimpleDateFormat
-import java.util.*
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun HomeScreen(
-    onOpenDrawer: () -> Unit,
-    viewModel: LauncherViewModel = viewModel()
-) {
-    val apps by viewModel.apps.collectAsState()
-    val currentTime = remember { mutableStateOf(System.currentTimeMillis()) }
-    
-    // Actualizar hora cada minuto
-    LaunchedEffect(Unit) {
-        while (true) {
-            kotlinx.coroutines.delay(60000)
-            currentTime.value = System.currentTimeMillis()
-        }
-    }
-    
-    val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-    val dateFormat = SimpleDateFormat("EEEE, d MMMM", Locale.getDefault())
-    
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        containerColor = androidx.compose.ui.graphics.Color.Transparent,
-        topBar = {
-            // Barra superior con hora y fecha
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 48.dp, start = 24.dp, end = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = timeFormat.format(Date(currentTime.value)),
-                    style = MaterialTheme.typography.displayLarge.copy(
-                        fontSize = 72.sp,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Light
-                    ),
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Text(
-                    text = dateFormat.format(Date(currentTime.value)),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                )
-            }
-        },
-        bottomBar = {
-            // Dock inferior con efecto Liquid Glass
-            LiquidGlassCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 24.dp)
-                    .height(80.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Botón de búsqueda
-                    ActionButton(
-                        icon = Icons.Default.Search,
-                        onClick = { /* Abrir búsqueda */ }
-                    )
-                    
-                    // Botón de cajón de apps
-                    ActionButton(
-                        icon = Icons.Default.Apps,
-                        onClick = onOpenDrawer,
-                        isPrimary = true
-                    )
-                    
-                    // Botón de agregar
-                    ActionButton(
-                        icon = Icons.Default.Add,
-                        onClick = { /* Agregar widget/app */ }
-                    )
+            if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+                if (diffX > 0) {
+                    // Swipe left - open settings
+                    document.getElementById('settingsPanel').classList.add('open');
+                } else {
+                    // Swipe right - close settings
+                    document.getElementById('settingsPanel').classList.remove('open');
                 }
             }
-        }
-    ) { padding ->
-        // Grid de apps arrastrables
-        DraggableAppGrid(
-            apps = apps,
-            onMove = { from, to -> viewModel.moveApp(from, to) },
-            onAppClick = { app -> 
-                // Abrir app con animación
-            },
-            modifier = Modifier.padding(padding)
-        )
+            touchStartX = null;
+            touchStartY = null;
+        });
+    </script>
+
+<script>
+// FIX: Remove alert and fix stuck icon
+document.getElementById('launchOverlay').addEventListener('click', function(e) {
+    if(e.target === this) {
+        closeApp();
     }
+});
+
+function closeApp() {
+    const overlay = document.getElementById('launchOverlay');
+    const icon = document.getElementById('launchIcon');
+    overlay.classList.remove('active');
+    icon.style.transform = 'translate(-50%, -50%) scale(1)';
+    icon.style.opacity = '1';
+    icon.style.top = '50%';
+    icon.style.left = '50%';
 }
 
-@Composable
-private fun ActionButton(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    onClick: () -> Unit,
-    isPrimary: Boolean = false
-) {
-    val scale by animateFloatAsState(
-        targetValue = if (isPrimary) 1.2f else 1f,
-        label = "actionScale"
-    )
+// Improved launch app without alert
+function launchApp(app) {
+    const overlay = document.getElementById('launchOverlay');
+    const icon = document.getElementById('launchIcon');
     
-    FilledIconButton(
-        onClick = onClick,
-        modifier = Modifier
-            .size(if (isPrimary) 64.dp else 48.dp)
-            .scale(scale),
-        colors = IconButtonDefaults.filledIconButtonColors(
-            containerColor = if (isPrimary) 
-                MaterialTheme.colorScheme.primary 
-            else 
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(if (isPrimary) 32.dp else 24.dp)
-        )
-    }
+    icon.textContent = app.icon;
+    icon.style.background = app.color;
+    overlay.classList.add('active');
+    
+    icon.style.top = '50%';
+    icon.style.left = '50%';
+    icon.style.transform = 'translate(-50%, -50%) scale(1)';
+    
+    setTimeout(() => {
+        icon.style.transform = 'translate(-50%, -50%) scale(20)';
+        icon.style.opacity = '0';
+    }, 100);
 }
-      // app/src/main/java/com/coloros/launcher/viewmodel/LauncherViewModel.kt
-package com.coloros.launcher.viewmodel
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.coloros.launcher.data.model.AppInfo
-import com.coloros.launcher.data.model.sampleApps
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
+// iPhone X+ style gesture
+let gestureStartY = 0;
+let gestureStartX = 0;
 
-class LauncherViewModel : ViewModel() {
-    private val _apps = MutableStateFlow(sampleApps.toMutableList())
-    val apps: StateFlow<List<AppInfo>> = _apps
+document.addEventListener('touchstart', e => {
+    gestureStartY = e.touches[0].clientY;
+    gestureStartX = e.touches[0].clientX;
+}, {passive: true});
+
+document.addEventListener('touchend', e => {
+    const endY = e.changedTouches[0].clientY;
+    const endX = e.changedTouches[0].clientX;
+    const diffY = gestureStartY - endY;
+    const diffX = Math.abs(gestureStartX - endX);
     
-    private val _isLocked = MutableStateFlow(true)
-    val isLocked: StateFlow<Boolean> = _isLocked
-    
-    private val _isFullScreen = MutableStateFlow(false)
-    val isFullScreen: StateFlow<Boolean> = _isFullScreen
-    
-    fun moveApp(fromIndex: Int, toIndex: Int) {
-        viewModelScope.launch {
-            val currentList = _apps.value.toMutableList()
-            if (fromIndex in currentList.indices && toIndex in currentList.indices) {
-                val item = currentList.removeAt(fromIndex)
-                currentList.add(toIndex, item)
-                _apps.value = currentList
-            }
-        }
+    // Swipe up from bottom to close app (iPhone style)
+    if (gestureStartY > window.innerHeight - 50 && diffY > 100 && diffX < 100) {
+        closeApp();
     }
     
-    fun unlock() {
-        _isLocked.value = false
+    // Swipe down from top for notifications
+    if (gestureStartY < 50 && diffY < -100) {
+        showNotification();
     }
-    
-    fun lock() {
-        _isLocked.value = true
-    }
-    
-    fun toggleFullScreen() {
-        _isFullScreen.value = !_isFullScreen.value
-    }
-    
-    fun addApp(app: AppInfo) {
-        viewModelScope.launch {
-            val currentList = _apps.value.toMutableList()
-            currentList.add(app)
-            _apps.value = currentList
-        }
-    }
-    
-    fun removeApp(packageName: String) {
-        viewModelScope.launch {
-            _apps.value = _apps.value.filter { it.packageName != packageName }
-        }
-    }
+}, {passive: true});
+
+function showNotification() {
+    // Quick notification preview
+    const notif = document.createElement('div');
+    notif.style.cssText = `
+        position: fixed;
+        top: 40px;
+        left: 10px;
+        right: 10px;
+        background: rgba(0,0,0,0.8);
+        backdrop-filter: blur(20px);
+        color: white;
+        padding: 15px;
+        border-radius: 15px;
+        z-index: 1000;
+        animation: slideDown 0.3s;
+    `;
+    notif.innerHTML = '<strong>Notificaciones</strong><br>Sin notificaciones nuevas';
+    document.body.appendChild(notif);
+    setTimeout(() => notif.remove(), 2000);
 }
-      // app/src/main/java/com/coloros/launcher/ui/screens/LockScreen.kt
-package com.coloros.launcher.ui.screens
 
-import androidx.compose.animation.*
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.coloros.launcher.ui.components.FingerprintButton
-import com.coloros.launcher.ui.components.LiquidGlassCard
-import java.text.SimpleDateFormat
-import java.util.*
+// Device and Language Selection
+let currentDevice = 'android';
+let currentLang = 'es';
 
-@Composable
-fun LockScreen(
-    onUnlock: () -> Unit
-) {
-    val currentTime = remember { mutableStateOf(System.currentTimeMillis()) }
+const translations = {
+    es: { unlock: 'Toca para desbloquear', settings: 'Configuración', fullscreen: 'Modo Pantalla Completa', dark: 'Tema Oscuro', fluid: 'Animaciones Fluidas', glass: 'Efecto Liquid Glass', lock: 'Bloquear Dispositivo', addApp: 'Agregar Aplicación', close: 'Cerrar', search: 'Buscar aplicaciones', notFound: 'No se encontraron aplicaciones', found: 'Encontrado', notifications: 'Sin notificaciones nuevas', selectDevice: 'Selecciona tu dispositivo', selectLang: 'Selecciona tu idioma', continue: 'Continuar' },
+    en: { unlock: 'Tap to unlock', settings: 'Settings', fullscreen: 'Fullscreen Mode', dark: 'Dark Theme', fluid: 'Fluid Animations', glass: 'Liquid Glass Effect', lock: 'Lock Device', addApp: 'Add Application', close: 'Close', search: 'Search apps', notFound: 'No apps found', found: 'Found', notifications: 'No new notifications', selectDevice: 'Select your device', selectLang: 'Select your language', continue: 'Continue' },
+    pt: { unlock: 'Toque para desbloquear', settings: 'Configurações', fullscreen: 'Modo Tela Cheia', dark: 'Tema Escuro', fluid: 'Animações Fluidas', glass: 'Efeito Liquid Glass', lock: 'Bloquear Dispositivo', addApp: 'Adicionar Aplicativo', close: 'Fechar', search: 'Buscar apps', notFound: 'Nenhum app encontrado', found: 'Encontrado', notifications: 'Sem notificações novas', selectDevice: 'Selecione seu dispositivo', selectLang: 'Selecione seu idioma', continue: 'Continuar' },
+    fr: { unlock: 'Appuyez pour déverrouiller', settings: 'Paramètres', fullscreen: 'Mode Plein Écran', dark: 'Thème Sombre', fluid: 'Animations Fluides', glass: 'Effet Liquid Glass', lock: 'Verrouiller l\'appareil', addApp: 'Ajouter une application', close: 'Fermer', search: 'Rechercher apps', notFound: 'Aucune app trouvée', found: 'Trouvé', notifications: 'Pas de nouvelles notifications', selectDevice: 'Sélectionnez votre appareil', selectLang: 'Sélectionnez votre langue', continue: 'Continuer' },
+    de: { unlock: 'Zum Entsperren tippen', settings: 'Einstellungen', fullscreen: 'Vollbildmodus', dark: 'Dunkles Thema', fluid: 'Flüssige Animationen', glass: 'Liquid Glass Effekt', lock: 'Gerät sperren', addApp: 'App hinzufügen', close: 'Schließen', search: 'Apps suchen', notFound: 'Keine Apps gefunden', found: 'Gefunden', notifications: 'Keine neuen Benachrichtigungen', selectDevice: 'Wählen Sie Ihr Gerät', selectLang: 'Wählen Sie Ihre Sprache', continue: 'Weiter' },
+    it: { unlock: 'Tocca per sbloccare', settings: 'Impostazioni', fullscreen: 'Modalità Schermo Intero', dark: 'Tema Scuro', fluid: 'Animazioni Fluide', glass: 'Effetto Liquid Glass', lock: 'Blocca Dispositivo', addApp: 'Aggiungi Applicazione', close: 'Chiudi', search: 'Cerca app', notFound: 'Nessuna app trovata', found: 'Trovato', notifications: 'Nessuna nuova notifica', selectDevice: 'Seleziona il tuo dispositivo', selectLang: 'Seleziona la tua lingua', continue: 'Continua' },
+    zh: { unlock: '点击解锁', settings: '设置', fullscreen: '全屏模式', dark: '深色主题', fluid: '流畅动画', glass: '液态玻璃效果', lock: '锁定设备', addApp: '添加应用', close: '关闭', search: '搜索应用', notFound: '未找到应用', found: '找到', notifications: '没有新通知', selectDevice: '选择您的设备', selectLang: '选择您的语言', continue: '继续' },
+    ja: { unlock: 'タップしてロック解除', settings: '設定', fullscreen: 'フルスクリーンモード', dark: 'ダークテーマ', fluid: '流体アニメーション', glass: 'リキッドガラス効果', lock: 'デバイスをロック', addApp: 'アプリを追加', close: '閉じる', search: 'アプリを検索', notFound: 'アプリが見つかりません', found: '見つかりました', notifications: '新しい通知はありません', selectDevice: 'デバイスを選択', selectLang: '言語を選択', continue: '続ける' },
+    ko: { unlock: '탭하여 잠금 해제', settings: '설정', fullscreen: '전체 화면 모드', dark: '다크 테마', fluid: '유동적인 애니메이션', glass: '리퀴드 글라스 효과', lock: '기기 잠금', addApp: '앱 추가', close: '닫기', search: '앱 검색', notFound: '앱을 찾을 수 없음', found: '찾음', notifications: '새 알림 없음', selectDevice: '기기 선택', selectLang: '언어 선택', continue: '계속' },
+    ru: { unlock: 'Нажмите для разблокировки', settings: 'Настройки', fullscreen: 'Полноэкранный режим', dark: 'Тёмная тема', fluid: 'Плавные анимации', glass: 'Эффект Liquid Glass', lock: 'Заблокировать устройство', addApp: 'Добавить приложение', close: 'Закрыть', search: 'Поиск приложений', notFound: 'Приложения не найдены', found: 'Найдено', notifications: 'Нет новых уведомлений', selectDevice: 'Выберите устройство', selectLang: 'Выберите язык', continue: 'Продолжить' },
+    ar: { unlock: 'اضغط للفتح', settings: 'الإعدادات', fullscreen: 'وضع ملء الشاشة', dark: 'الوضع الداكن', fluid: 'رسوم متحركة سلسة', glass: 'تأثير Liquid Glass', lock: 'قفل الجهاز', addApp: 'إضافة تطبيق', close: 'إغلاق', search: 'البحث في التطبيقات', notFound: 'لم يتم العثور على تطبيقات', found: 'تم العثور عليه', notifications: 'لا توجد إشعارات جديدة', selectDevice: 'اختر جهازك', selectLang: 'اختر لغتك', continue: 'متابعة' },
+    hi: { unlock: 'अनलॉक करने के लिए टैप करें', settings: 'सेटिंग्स', fullscreen: 'फुल स्क्रीन मोड', dark: 'डार्क थीम', fluid: 'फ्लूइड एनिमेशन', glass: 'लिक्विड ग्लास इफेक्ट', lock: 'डिवाइस लॉक करें', addApp: 'ऐप जोड़ें', close: 'बंद करें', search: 'ऐप्स खोजें', notFound: 'कोई ऐप नहीं मिला', found: 'मिला', notifications: 'कोई नई सूचना नहीं', selectDevice: 'अपना डिवाइस चुनें', selectLang: 'अपनी भाषा चुनें', continue: 'जारी रखें' },
+    tr: { unlock: 'Kilidi açmak için dokun', settings: 'Ayarlar', fullscreen: 'Tam Ekran Modu', dark: 'Karanlık Tema', fluid: 'Akıcı Animasyonlar', glass: 'Liquid Glass Efekti', lock: 'Cihazı Kilitle', addApp: 'Uygulama Ekle', close: 'Kapat', search: 'Uygulama ara', notFound: 'Uygulama bulunamadı', found: 'Bulundu', notifications: 'Yeni bildirim yok', selectDevice: 'Cihazınızı seçin', selectLang: 'Dilinizi seçin', continue: 'Devam et' },
+    pl: { unlock: 'Dotknij, aby odblokować', settings: 'Ustawienia', fullscreen: 'Tryb Pełnego Ekranu', dark: 'Ciemny Motyw', fluid: 'Płynne Animacje', glass: 'Efekt Liquid Glass', lock: 'Zablokuj Urządzenie', addApp: 'Dodaj Aplikację', close: 'Zamknij', search: 'Szukaj aplikacji', notFound: 'Nie znaleziono aplikacji', found: 'Znaleziono', notifications: 'Brak nowych powiadomień', selectDevice: 'Wybierz swoje urządzenie', selectLang: 'Wybierz swój język', continue: 'Kontynuuj' },
+    nl: { unlock: 'Tik om te ontgrendelen', settings: 'Instellingen', fullscreen: 'Volledige Schermmodus', dark: 'Donker Thema', fluid: 'Vloeiende Animaties', glass: 'Liquid Glass Effect', lock: 'Apparaat Vergrendelen', addApp: 'App Toevoegen', close: 'Sluiten', search: 'Apps zoeken', notFound: 'Geen apps gevonden', found: 'Gevonden', notifications: 'Geen nieuwe meldingen', selectDevice: 'Selecteer uw apparaat', selectLang: 'Selecteer uw taal', continue: 'Doorgaan' },
+    sv: { unlock: 'Tryck för att låsa upp', settings: 'Inställningar', fullscreen: 'Helskärmsläge', dark: 'Mörkt Tema', fluid: 'Flytande Animationer', glass: 'Liquid Glass-effekt', lock: 'Lås Enhet', addApp: 'Lägg till App', close: 'Stäng', search: 'Sök appar', notFound: 'Inga appar hittades', found: 'Hittad', notifications: 'Inga nya aviseringar', selectDevice: 'Välj din enhet', selectLang: 'Välj ditt språk', continue: 'Fortsätt' },
+    th: { unlock: 'แตะเพื่อปลดล็อก', settings: 'การตั้งค่า', fullscreen: 'โหมดเต็มหน้าจอ', dark: 'ธีมมืด', fluid: 'อนิเมชั่นลื่นไหล', glass: 'เอฟเฟกต์ Liquid Glass', lock: 'ล็อกอุปกรณ์', addApp: 'เพิ่มแอป', close: 'ปิด', search: 'ค้นหาแอป', notFound: 'ไม่พบแอป', found: 'พบ', notifications: 'ไม่มีการแจ้งเตือนใหม่', selectDevice: 'เลือกอุปกรณ์ของคุณ', selectLang: 'เลือกภาษาของคุณ', continue: 'ดำเนินการต่อ' },
+    vi: { unlock: 'Chạm để mở khóa', settings: 'Cài đặt', fullscreen: 'Chế độ Toàn màn hình', dark: 'Chủ đề Tối', fluid: 'Hoạt ảnh Mượt mà', glass: 'Hiệu ứng Liquid Glass', lock: 'Khóa Thiết bị', addApp: 'Thêm Ứng dụng', close: 'Đóng', search: 'Tìm kiếm ứng dụng', notFound: 'Không tìm thấy ứng dụng', found: 'Đã tìm thấy', notifications: 'Không có thông báo mới', selectDevice: 'Chọn thiết bị của bạn', selectLang: 'Chọn ngôn ngữ của bạn', continue: 'Tiếp tục' },
+    id: { unlock: 'Ketuk untuk membuka kunci', settings: 'Pengaturan', fullscreen: 'Mode Layar Penuh', dark: 'Tema Gelap', fluid: 'Animasi Fluida', glass: 'Efek Liquid Glass', lock: 'Kunci Perangkat', addApp: 'Tambah Aplikasi', close: 'Tutup', search: 'Cari aplikasi', notFound: 'Tidak ada aplikasi ditemukan', found: 'Ditemukan', notifications: 'Tidak ada notifikasi baru', selectDevice: 'Pilih perangkat Anda', selectLang: 'Pilih bahasa Anda', continue: 'Lanjutkan' }
+};
+
+// SVG Icons instead of emojis
+const svgIcons = {
+    phone: '<svg viewBox="0 0 24 24" fill="white" style="width:28px;height:28px"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>',
+    message: '<svg viewBox="0 0 24 24" fill="white" style="width:28px;height:28px"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>',
+    camera: '<svg viewBox="0 0 24 24" fill="white" style="width:28px;height:28px"><circle cx="12" cy="12" r="3.2"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>',
+    photos: '<svg viewBox="0 0 24 24" fill="white" style="width:28px;height:28px"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>',
+    settings: '<svg viewBox="0 0 24 24" fill="white" style="width:28px;height:28px"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L5.08 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>',
+    music: '<svg viewBox="0 0 24 24" fill="white" style="width:28px;height:28px"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>',
+    clock: '<svg viewBox="0 0 24 24" fill="white" style="width:28px;height:28px"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>',
+    weather: '<svg viewBox="0 0 24 24" fill="white" style="width:28px;height:28px"><path d="M19.36 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.64-4.96z"/></svg>',
+    maps: '<svg viewBox="0 0 24 24" fill="white" style="width:28px;height:28px"><path d="M20.5 3l-6 1.5-6-1.5-5.5 1.4v15.1l5.5-1.4 6 1.5 6-1.5 5.5 1.4V4.4l-5.5-1.4zM15 19l-6-1.5V5l6 1.5v12.5z"/></svg>',
+    mail: '<svg viewBox="0 0 24 24" fill="white" style="width:28px;height:28px"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>',
+    calc: '<svg viewBox="0 0 24 24" fill="white" style="width:28px;height:28px"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 2h2v2h-2V5zm0 4h2v2h-2V9zm0 4h2v2h-2v-2zM5 15h4v2H5v-2zm0-4h4v2H5v-2zm0-4h4v2H5V7zm12 8h-4v-2h4v2zm0-4h-4v-2h4v2zm0-4h-4V7h4v2z"/></svg>',
+    notes: '<svg viewBox="0 0 24 24" fill="white" style="width:28px;height:28px"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>',
+    search: '<svg viewBox="0 0 24 24" fill="white" style="width:24px;height:24px"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>',
+    add: '<svg viewBox="0 0 24 24" fill="white" style="width:24px;height:24px"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>',
+    close: '<svg viewBox="0 0 24 24" fill="white" style="width:20px;height:20px"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>'
+};
+
+// Update apps with SVG icons
+apps = [
+    { id: 1, name: 'Phone', icon: svgIcons.phone, color: '#00B578' },
+    { id: 2, name: 'Messages', icon: svgIcons.message, color: '#2196F3' },
+    { id: 3, name: 'Camera', icon: svgIcons.camera, color: '#FF5722' },
+    { id: 4, name: 'Photos', icon: svgIcons.photos, color: '#E91E63' },
+    { id: 5, name: 'Settings', icon: svgIcons.settings, color: '#607D8B' },
+    { id: 6, name: 'Music', icon: svgIcons.music, color: '#9C27B0' },
+    { id: 7, name: 'Clock', icon: svgIcons.clock, color: '#FF9800' },
+    { id: 8, name: 'Weather', icon: svgIcons.weather, color: '#03A9F4' },
+    { id: 9, name: 'Maps', icon: svgIcons.maps, color: '#4CAF50' },
+    { id: 10, name: 'Mail', icon: svgIcons.mail, color: '#F44336' },
+    { id: 11, name: 'Calculator', icon: svgIcons.calc, color: '#795548' },
+    { id: 12, name: 'Notes', icon: svgIcons.notes, color: '#FFEB3B' }
+];
+
+// Setup screen
+function showSetup() {
+    const setup = document.createElement('div');
+    setup.id = 'setupScreen';
+    setup.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+        z-index: 2000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        color: white;
+    `;
     
-    LaunchedEffect(Unit) {
-        while (true) {
-            kotlinx.coroutines.delay(1000)
-            currentTime.value = System.currentTimeMillis()
-        }
-    }
-    
-    val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-    val dateFormat = SimpleDateFormat("EEEE, d MMMM", Locale.getDefault())
-    
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background.copy(alpha = 0.95f))
-            .padding(32.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(48.dp)
-        ) {
-            // Hora grande
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = timeFormat.format(Date(currentTime.value)),
-                    style = MaterialTheme.typography.displayLarge.copy(fontSize = 96.sp),
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Text(
-                    text = dateFormat.format(Date(currentTime.value)),
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                )
-            }
+    setup.innerHTML = `
+        <h1 style="font-size: 28px; margin-bottom: 40px; font-weight: 300;">ColorOS Launcher</h1>
+        
+        <div style="width: 100%; max-width: 300px;">
+            <h3 style="margin-bottom: 15px; opacity: 0.9;">${translations.en.selectDevice}</h3>
+            <div style="display: flex; gap: 10px; margin-bottom: 30px;">
+                <button onclick="selectDevice('android')" id="btn-android" style="flex: 1; padding: 15px; border: 2px solid #00B578; background: transparent; color: white; border-radius: 12px; cursor: pointer;">Android</button>
+                <button onclick="selectDevice('ios')" id="btn-ios" style="flex: 1; padding: 15px; border: 2px solid rgba(255,255,255,0.3); background: transparent; color: white; border-radius: 12px; cursor: pointer;">iOS</button>
+            </div>
             
-            // Notificaciones simuladas con Liquid Glass
-            LiquidGlassCard(modifier = Modifier.fillMaxWidth()) {
-                Column {
-                    Text(
-                        "Notificaciones",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    Text(
-                        "Sin notificaciones nuevas",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            <h3 style="margin-bottom: 15px; opacity: 0.9;">${translations.en.selectLang}</h3>
+            <select id="langSelect" onchange="selectLanguage(this.value)" style="width: 100%; padding: 15px; border-radius: 12px; border: none; background: rgba(255,255,255,0.1); color: white; font-size: 16px; margin-bottom: 30px;">
+                <option value="es">Español</option>
+                <option value="en" selected>English</option>
+                <option value="pt">Português</option>
+                <option value="fr">Français</option>
+                <option value="de">Deutsch</option>
+                <option value="it">Italiano</option>
+                <option value="zh">中文</option>
+                <option value="ja">日本語</option>
+                <option value="ko">한국어</option>
+                <option value="ru">Русский</option>
+                <option value="ar">العربية</option>
+                <option value="hi">हिन्दी</option>
+                <option value="tr">Türkçe</option>
+                <option value="pl">Polski</option>
+                <option value="nl">Nederlands</option>
+                <option value="sv">Svenska</option>
+                <option value="th">ไทย</option>
+                <option value="vi">Tiếng Việt</option>
+                <option value="id">Bahasa Indonesia</option>
+            </select>
             
-            Spacer(modifier = Modifier.weight(1f))
-            
-            // Botón de huella con animación
-            Text(
-                "Toca para desbloquear",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                textAlign = TextAlign.Center
-            )
-            
-            FingerprintButton(
-                onAuthenticated = onUnlock,
-                modifier = Modifier.size(100.dp)
-            )
-        }
-    }
-}
-      // app/src/main/java/com/coloros/launcher/ui/screens/LauncherNavigation.kt
-package com.coloros.launcher.ui.screens
-
-import androidx.compose.animation.*
-import androidx.compose.animation.core.tween
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import com.coloros.launcher.viewmodel.LauncherViewModel
-
-sealed class Screen(val route: String) {
-    object Lock : Screen("lock")
-    object Home : Screen("home")
-    object Drawer : Screen("drawer")
-    object Settings : Screen("settings")
-}
-
-@Composable
-fun LauncherNavigation(
-    navController: NavHostController = rememberNavController(),
-    viewModel: LauncherViewModel = viewModel()
-) {
-    val isLocked by viewModel.isLocked.collectAsState()
+            <button onclick="finishSetup()" style="width: 100%; padding: 18px; background: #00B578; color: white; border: none; border-radius: 12px; font-size: 18px; cursor: pointer; font-weight: 500;">
+                ${translations.en.continue}
+            </button>
+        </div>
+    `;
     
-    NavHost(
-        navController = navController,
-        startDestination = if (isLocked) Screen.Lock.route else Screen.Home.route
-    ) {
-        composable(
-            route = Screen.Lock.route,
-            enter = { fadeIn(animationSpec = tween(300)) },
-            exit = { fadeOut(animationSpec = tween(300)) }
-        ) {
-            LockScreen(
-                onUnlock = {
-                    viewModel.unlock()
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Lock.route) { inclusive = true }
-                    }
-                }
-            )
-        }
-        
-        composable(
-            route = Screen.Home.route,
-            enter = { slideInVertically(initialOffsetY = { it }) + fadeIn() },
-            exit = { slideOutVertically(targetOffsetY = { it }) + fadeOut() }
-        ) {
-            HomeScreen(
-                onOpenDrawer = { navController.navigate(Screen.Drawer.route) }
-            )
-        }
-        
-        composable(
-            route = Screen.Drawer.route,
-            enter = { slideInVertically(initialOffsetY = { it }) + fadeIn() },
-            exit = { slideOutVertically(targetOffsetY = { it }) + fadeOut() }
-        ) {
-            AppDrawerScreen(
-                onBack = { navController.popBackStack() }
-            )
-        }
-    }
-}
-      <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
-
-    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
-        tools:ignore="QueryAllPackagesPermission" />
-
-    <application
-        android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true"
-        android:theme="@style/Theme.ColorOSLauncher"
-        tools:targetApi="34">
-        
-        <activity
-            android:name=".MainActivity"
-            android:exported="true"
-            android:theme="@style/Theme.ColorOSLauncher"
-            android:launchMode="singleTask"
-            android:clearTaskOnLaunch="true"
-            android:stateNotNeeded="true"
-            android:windowSoftInputMode="adjustPan"
-            android:screenOrientation="unspecified">
-            
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-            
-            <!-- Para establecer como launcher por defecto -->
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.HOME" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
-    </application>
-
-</manifest>
-                  # 🎨 ColorOS Launcher
-
-Un launcher de Android inspirado en ColorOS 14 de OPPO/OnePlus, con animaciones fluidas, efecto Liquid Glass y personalización completa.
-
-## ✨ Características
-
-- 🔓 **Animación de Desbloqueo con Huella**: Efecto de escaneo con anillos animados
-- 🎭 **Animaciones de Apertura de Apps**: Transiciones suaves y paralelas
-- 🫗 **Efecto Liquid Glass**: Tarjetas con efecto de cristal líquido animado
-- 🔘 **Botones de Acción Personalizables**: Dock inferior interactivo
-- ⛶ **Modo Pantalla Completa**: Sin barras de sistema visibles
-- 🎯 **Iconos Movibles**: Arrastra y suelta apps con animaciones
-- ➕ **Agregar Aplicaciones**: Sistema completo de gestión de apps
-
-## 🚀 Tecnologías
-
-- **Kotlin** - Lenguaje principal
-- **Jetpack Compose** - UI moderna y declarativa
-- **Material Design 3** - Componentes y temas
-- **Biometric API** - Autenticación por huella
-- **Animation API** - Animaciones complejas
-
-## 📱 Requisitos
-
-- Android 8.0 (API 26) o superior
-- Soporte para Compose
-- Permiso de huella dactilar (opcional)
-
-## 🛠️ Instalación
-
-1. Clona el repositorio:
-```bash
-git clone https://github.com/tuusuario/coloros-launcher.git
-        // Efecto de pulso exterior
-        if (isScanning) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .scale(pulseScale)
-                    .background(
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = pulseAlpha),
-                        shape = CircleShape
-                    )
-            )
-        }
-        
-        // Botón principal
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .scale(scale)
-                .shadow(
-                    elevation = if (isScanning) 20.dp else 8.dp,
-                    shape = CircleShape,
-                    spotColor = MaterialTheme.colorScheme.primary
-                )
-                .background(
-                    brush = Brush.radialGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.primaryContainer,
-                            MaterialTheme.colorScheme.primary
-                        )
-                    ),
-                    shape = CircleShape
-                )
-                .border(
-                    width = 3.dp,
-                    color = if (isSuccess) Color.Green else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.3f),
-                    shape = CircleShape
-                )
-                .clickable(
-                    interactionSource = interactionSource,
-                    indication = null
-                ) {
-                    isScanning = true
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Fingerprint,
-                contentDescription = "Fingerprint",
-                modifier = Modifier.size(48.dp),
-                tint = if (isSuccess) Color.Green else MaterialTheme.colorScheme.onPrimary
-            )
-        }
-        
-        // Anillos de escaneo
-        if (isScanning) {
-            ScanningRings()
-        }
-    }
+    document.body.appendChild(setup);
 }
 
-@Composable
-private fun ScanningRings() {
-    val infiniteTransition = rememberInfiniteTransition(label = "rings")
+function selectDevice(device) {
+    currentDevice = device;
+    document.getElementById('btn-android').style.borderColor = device === 'android' ? '#00B578' : 'rgba(255,255,255,0.3)';
+    document.getElementById('btn-ios').style.borderColor = device === 'ios' ? '#00B578' : 'rgba(255,255,255,0.3)';
+}
+
+function selectLanguage(lang) {
+    currentLang = lang;
+    const t = translations[lang];
+    document.querySelector('#setupScreen h3').textContent = t.selectDevice;
+    document.querySelectorAll('#setupScreen h3')[1].textContent = t.selectLang;
+    document.querySelector('#setupScreen button:last-child').textContent = t.continue;
+}
+
+function finishSetup() {
+    const setup = document.getElementById('setupScreen');
+    setup.style.opacity = '0';
+    setup.style.transition = 'opacity 0.5s';
+    setTimeout(() => setup.remove(), 500);
+    applyLanguage();
+    renderApps();
+}
+
+function applyLanguage() {
+    const t = translations[currentLang];
+    document.querySelector('.unlock-text').textContent = t.unlock;
+    document.querySelector('.settings-header').textContent = t.settings;
+    document.querySelectorAll('.setting-item')[0].querySelector('span').textContent = t.fullscreen;
+    document.querySelectorAll('.setting-item')[1].querySelector('span').textContent = t.dark;
+    document.querySelectorAll('.setting-item')[2].querySelector('span').textContent = t.fluid;
+    document.querySelectorAll('.setting-item')[3].querySelector('span').textContent = t.glass;
+    document.querySelectorAll('.setting-item')[4].querySelector('span').textContent = t.lock;
+    document.querySelector('.modal-title').textContent = t.addApp;
+    document.querySelector('.close-modal').textContent = t.close;
+}
+
+// Override renderApps with SVG support
+function renderApps() {
+    const grid = document.getElementById('appGrid');
+    grid.innerHTML = '';
     
-    repeat(3) { index ->
-        val delay = index * 300
-        val scale by infiniteTransition.animateFloat(
-            initialValue = 1f,
-            targetValue = 2f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(1500, delayMillis = delay, easing = LinearOutSlowInEasing),
-                repeatMode = RepeatMode.Restart
-            ),
-            label = "ring$index"
-        )
+    apps.forEach((app, index) => {
+        const item = document.createElement('div');
+        item.className = 'app-item';
+        item.draggable = true;
+        item.dataset.index = index;
+        item.innerHTML = `
+            <div class="app-icon" style="background: linear-gradient(135deg, ${app.color}, ${adjustColor(app.color, 20)})">
+                ${app.icon}
+            </div>
+            <div class="app-name">${app.name}</div>
+        `;
         
-        val alpha by infiniteTransition.animateFloat(
-            initialValue = 0.6f,
-            targetValue = 0f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(1500, delayMillis = delay, easing = LinearOutSlowInEasing),
-                repeatMode = RepeatMode.Restart
-            ),
-            label = "ringAlpha$index"
-        )
+        item.addEventListener('dragstart', handleDragStart);
+        item.addEventListener('dragover', handleDragOver);
+        item.addEventListener('drop', handleDrop);
+        item.addEventListener('dragend', handleDragEnd);
+        item.addEventListener('click', () => launchApp(app));
         
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .scale(scale)
-                .border(
-                    width = 2.dp,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = alpha),
-                    shape = CircleShape
-                )
-        )
+        grid.appendChild(item);
+    });
+}
+
+// Override openSearch
+function openSearch() {
+    const t = translations[currentLang];
+    const query = prompt(t.search + ':');
+    if (query) {
+        const found = apps.filter(a => a.name.toLowerCase().includes(query.toLowerCase()));
+        if (found.length > 0) {
+            launchApp(found[0]);
+        }
     }
 }
+
+// Initialize setup on load
+window.addEventListener('load', () => {
+    setTimeout(showSetup, 500);
+});
+</script>
+
+</body>
+</html>
