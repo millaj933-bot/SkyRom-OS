@@ -1045,6 +1045,383 @@ function makeCall(){
 // Initialize
 updateClock();
 </script>
+<script>
+let currentMode='mobile';
+let startY=0;
+let startX=0;
+let isSwiping=false;
+let touchStartTime=0;
+let appDragStartY=0;
+let appDragCurrentWindow=null;
+let isAppDragging=false;
 
-</body>
-</html>
+function selectDevice(mode){
+  currentMode=mode;
+  document.body.className=mode+'-mode';
+  document.getElementById('device-selector').classList.add('hidden');
+  document.getElementById('os-container').classList.add('active');
+  if(mode==='desktop')document.getElementById('unlock-hint').textContent='Haz clic para desbloquear';
+  setTimeout(updateClock,100);
+}
+
+function updateClock(){
+  const now=new Date();
+  const h=now.getHours().toString().padStart(2,'0');
+  const m=now.getMinutes().toString().padStart(2,'0');
+  const timeStr=h+':'+m;
+  document.getElementById('time').textContent=timeStr;
+  document.getElementById('statusTime').textContent=timeStr;
+  const dias=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const diaSemana=dias[now.getDay()];
+  const dia=now.getDate();
+  const mes=meses[now.getMonth()];
+  document.getElementById('date').textContent=`${diaSemana}, ${dia} de ${mes}`;
+  setTimeout(updateClock,1000);
+}
+
+function unlock(){
+  document.getElementById('lockscreen').classList.add('unlocked');
+  document.getElementById('home').classList.add('active');
+}
+
+// ABRIR APP CON ANIMACIÓN DESDE ABAJO
+function openApp(name){
+  const app=document.getElementById(name);
+  if(!app)return;
+  document.querySelectorAll('.window.open').forEach(w=>{
+    if(w!==app){
+      w.classList.remove('open');
+      w.style.transform='';
+      w.style.opacity='';
+    }
+  });
+  document.getElementById('notif').classList.remove('show');
+  document.getElementById('control').classList.remove('show');
+  app.classList.add('open');
+  app.style.transition='none';
+  app.style.transform='translateY(100%) scale(0.9)';
+  app.style.opacity='0.8';
+  requestAnimationFrame(()=>{
+    app.style.transition='all 0.5s cubic-bezier(0.32, 0.72, 0, 1)';
+    app.style.transform='translateY(0) scale(1)';
+    app.style.opacity='1';
+  });
+}
+
+// CERRAR APP CON ANIMACIÓN HACIA ABAJO
+function closeApp(){
+  const openWindow=document.querySelector('.window.open');
+  if(!openWindow)return;
+  openWindow.style.transition='all 0.4s cubic-bezier(0.32, 0.72, 0, 1)';
+  openWindow.style.transform='translateY(100%) scale(0.9)';
+  openWindow.style.opacity='0';
+  setTimeout(()=>{
+    openWindow.classList.remove('open');
+    openWindow.style.transform='';
+    openWindow.style.opacity='';
+    openWindow.style.transition='';
+  },400);
+}
+
+function goHome(){
+  closeApp();
+}
+
+function toggleNotif(){
+  document.getElementById('notif').classList.toggle('show');
+  document.getElementById('control').classList.remove('show');
+}
+
+function toggleControl(){
+  document.getElementById('control').classList.toggle('show');
+  document.getElementById('notif').classList.remove('show');
+}
+
+// SISTEMA DE GESTOS TOUCH
+document.addEventListener('touchstart',e=>{
+  const touch=e.touches[0];
+  startY=touch.clientY;
+  startX=touch.clientX;
+  isSwiping=true;
+  touchStartTime=Date.now();
+  isAppDragging=false;
+  const target=e.target;
+  const windowEl=target.closest('.window.open');
+  const gestureIndicator=target.closest('.app-gesture-indicator');
+  if((gestureIndicator|| (windowEl&&startY>window.innerHeight-100))&&windowEl){
+    appDragStartY=startY;
+    appDragCurrentWindow=windowEl;
+    isAppDragging=true;
+    windowEl.style.transition='none';
+    return;
+  }
+},{passive:false});
+
+document.addEventListener('touchmove',e=>{
+  if(!isSwiping)return;
+  const touch=e.touches[0];
+  const currentY=touch.clientY;
+  const diffY=currentY-startY;
+  if(isAppDragging&&appDragCurrentWindow){
+    if(diffY>0){
+      e.preventDefault();
+      const progress=Math.min(diffY/300,1);
+      appDragCurrentWindow.style.transform=`translateY(${diffY*0.8}px) scale(${1-progress*0.1})`;
+      appDragCurrentWindow.style.opacity=1-progress*0.5;
+    }
+    return;
+  }
+  const notifOpen=document.getElementById('notif').classList.contains('show');
+  const controlOpen=document.getElementById('control').classList.contains('show');
+  if((notifOpen||controlOpen)&&startY<300&&diffY<-30){
+    const el=notifOpen?document.getElementById('notif'):document.getElementById('control');
+    el.style.transition='none';
+    el.style.transform=`translateY(${diffY}px)`;
+  }
+},{passive:false});
+
+document.addEventListener('touchend',e=>{
+  if(!isSwiping)return;
+  isSwiping=false;
+  const touch=e.changedTouches[0];
+  const endY=touch.clientY;
+  const diffY=endY-startY;
+  const touchDuration=Date.now()-touchStartTime;
+  const openWindow=document.querySelector('.window.open');
+  const notifOpen=document.getElementById('notif').classList.contains('show');
+  const controlOpen=document.getElementById('control').classList.contains('show');
+  if(isAppDragging&&appDragCurrentWindow){
+    const dragDistance=endY-appDragStartY;
+    appDragCurrentWindow.style.transition='all 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
+    if(dragDistance>100){
+      appDragCurrentWindow.style.transform='translateY(100%) scale(0.9)';
+      appDragCurrentWindow.style.opacity='0';
+      setTimeout(()=>{
+        appDragCurrentWindow.classList.remove('open');
+        appDragCurrentWindow.style.transform='';
+        appDragCurrentWindow.style.opacity='';
+        appDragCurrentWindow.style.transition='';
+      },300);
+    }else{
+      appDragCurrentWindow.style.transform='translateY(0) scale(1)';
+      appDragCurrentWindow.style.opacity='1';
+      setTimeout(()=>{appDragCurrentWindow.style.transition='';},300);
+    }
+    isAppDragging=false;
+    appDragCurrentWindow=null;
+    return;
+  }
+  document.getElementById('notif').style.transition='';
+  document.getElementById('control').style.transition='';
+  if(controlOpen&&startY<300&&diffY<-80){
+    document.getElementById('control').style.transform='';
+    toggleControl();
+    return;
+  }
+  if(notifOpen&&startY<300&&diffY<-80){
+    document.getElementById('notif').style.transform='';
+    toggleNotif();
+    return;
+  }
+  if(startY>window.innerHeight-60&&touchDuration<200&&Math.abs(diffY)<10&&openWindow){
+    goHome();
+    return;
+  }
+  if(startY<50&&diffY>80&&!controlOpen){
+    toggleNotif();
+    return;
+  }
+  if(startY<50&&diffY>80&&!notifOpen){
+    toggleControl();
+    return;
+  }
+  if(openWindow&&!isAppDragging){
+    openWindow.style.transition='all 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
+    openWindow.style.transform='translateY(0) scale(1)';
+    openWindow.style.opacity='1';
+    setTimeout(()=>{openWindow.style.transition='';},300);
+  }
+  document.getElementById('notif').style.transform='';
+  document.getElementById('control').style.transform='';
+},{passive:true});
+
+// SOPORTE MOUSE
+let mouseDown=false;
+let mouseStartY=0;
+let mouseWindow=null;
+
+document.addEventListener('mousedown',e=>{
+  const windowEl=e.target.closest('.window.open');
+  const gestureIndicator=e.target.closest('.app-gesture-indicator');
+  if((gestureIndicator||(windowEl&&e.clientY>window.innerHeight-100))&&windowEl){
+    mouseDown=true;
+    mouseStartY=e.clientY;
+    mouseWindow=windowEl;
+    windowEl.style.transition='none';
+  }
+});
+
+document.addEventListener('mousemove',e=>{
+  if(!mouseDown||!mouseWindow)return;
+  const diffY=e.clientY-mouseStartY;
+  if(diffY>0){
+    const progress=Math.min(diffY/300,1);
+    mouseWindow.style.transform=`translateY(${diffY*0.8}px) scale(${1-progress*0.1})`;
+    mouseWindow.style.opacity=1-progress*0.5;
+  }
+});
+
+document.addEventListener('mouseup',e=>{
+  if(!mouseDown)return;
+  mouseDown=false;
+  if(mouseWindow){
+    const diffY=e.clientY-mouseStartY;
+    mouseWindow.style.transition='all 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
+    if(diffY>100){
+      mouseWindow.style.transform='translateY(100%) scale(0.9)';
+      mouseWindow.style.opacity='0';
+      setTimeout(()=>{
+        mouseWindow.classList.remove('open');
+        mouseWindow.style.transform='';
+        mouseWindow.style.opacity='';
+        mouseWindow.style.transition='';
+      },300);
+    }else{
+      mouseWindow.style.transform='translateY(0) scale(1)';
+      mouseWindow.style.opacity='1';
+      setTimeout(()=>{mouseWindow.style.transition='';},300);
+    }
+    mouseWindow=null;
+  }
+});
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape')closeApp();
+  if(e.key==='n'&&e.ctrlKey){e.preventDefault();toggleNotif();}
+  if(e.key==='c'&&e.ctrlKey){e.preventDefault();toggleControl();}
+});
+
+function toggleSwitch(el){
+  el.classList.toggle('active');
+}
+
+function showToast(message){
+  const toast=document.getElementById('toast');
+  toast.innerHTML=message.replace(/\n/g,'<br>');
+  toast.classList.add('show');
+  setTimeout(()=>{toast.classList.remove('show');},2000);
+}
+
+function toggleFlashlight(el){
+  el.classList.toggle('active');
+  if(el.classList.contains('active')){
+    document.body.style.filter='brightness(1.2)';
+    setTimeout(()=>document.body.style.filter='',100);
+  }
+}
+
+function adjustBrightness(e,track){
+  const rect=track.getBoundingClientRect();
+  const percent=(e.clientX-rect.left)/rect.width;
+  document.getElementById('brightness-bar').style.width=(percent*100)+'%';
+}
+
+function shutterEffect(el){
+  el.style.transform='scale(0.9)';
+  setTimeout(()=>{el.style.transform='scale(1)';},150);
+  showToast('📸 Foto capturada');
+}
+
+function enlargePhoto(el){
+  if(el.classList.contains('enlarged')){
+    el.classList.remove('enlarged');
+  }else{
+    document.querySelectorAll('.gallery-item.enlarged').forEach(item=>item.classList.remove('enlarged'));
+    el.classList.add('enlarged');
+  }
+}
+
+function togglePlay(btn){
+  const isPlaying=btn.textContent==='⏸';
+  btn.textContent=isPlaying?'▶':'⏸';
+  btn.style.background=isPlaying?'#007AFF':'#ff2d55';
+}
+
+function seekMusic(e,track){
+  const rect=track.getBoundingClientRect();
+  const percent=(e.clientX-rect.left)/rect.width;
+  document.getElementById('music-progress').style.width=(percent*100)+'%';
+  track.querySelector('.progress-knob').style.left=(percent*100)+'%';
+}
+
+let calcValue='0';
+let calcOperator='';
+let calcPrevious='';
+
+function calcInput(val){
+  const display=document.getElementById('calc-display');
+  if(val==='AC'){
+    calcValue='0';
+    calcOperator='';
+    calcPrevious='';
+    display.textContent='0';
+  }else if(val==='+/-'){
+    calcValue=String(parseFloat(calcValue)*-1);
+    display.textContent=calcValue;
+  }else if(val==='%'){
+    calcValue=String(parseFloat(calcValue)/100);
+    display.textContent=calcValue;
+  }else if(['+','-','*','/'].includes(val)){
+    calcOperator=val;
+    calcPrevious=calcValue;
+    calcValue='0';
+  }else if(val==='='){
+    if(calcOperator&&calcPrevious){
+      const prev=parseFloat(calcPrevious);
+      const current=parseFloat(calcValue);
+      let result=0;
+      switch(calcOperator){
+        case '+':result=prev+current;break;
+        case '-':result=prev-current;break;
+        case '*':result=prev*current;break;
+        case '/':result=prev/current;break;
+      }
+      calcValue=String(result).length>10?String(result).slice(0,10):String(result);
+      display.textContent=calcValue;
+      calcOperator='';
+      calcPrevious='';
+    }
+  }else{
+    if(calcValue==='0')calcValue='';
+    if(calcValue.length<10){
+      calcValue+=val;
+      display.textContent=calcValue;
+    }
+  }
+}
+
+let dialValue='';
+function dialNumber(num){
+  if(dialValue.length<15){
+    dialValue+=num;
+    document.getElementById('phone-display').textContent=dialValue;
+  }
+}
+
+function clearDial(){
+  dialValue=dialValue.slice(0,-1);
+  document.getElementById('phone-display').textContent=dialValue||'';
+}
+
+function makeCall(){
+  if(dialValue){
+    showToast(`Llamando a ${dialValue}...`);
+    setTimeout(()=>showToast('📞 Llamada finalizada'),3000);
+  }else{
+    showToast('Ingresa un número');
+  }
+}
+
+updateClock();
+</script>
