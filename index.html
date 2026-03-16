@@ -1,1427 +1,1217 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>SkyOS</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent;user-select:none;}
-html,body{background:#000;height:100%;overflow:hidden;}
-
-/* SELECTOR */
-#device-selector{position:fixed;inset:0;background:linear-gradient(135deg,#667eea 0%,#764ba2 50%,#f093fb 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;z-index:10000;transition:opacity 0.5s;}
-#device-selector.hidden{opacity:0;pointer-events:none;}
-.device-btn{width:140px;height:160px;background:rgba(255,255,255,0.1);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:24px;border:1px solid rgba(255,255,255,0.2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:15px;cursor:pointer;transition:all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);color:white;box-shadow:0 8px 32px rgba(0,0,0,0.2);}
-.device-btn:hover{transform:translateY(-8px) scale(1.05);background:rgba(255,255,255,0.2);box-shadow:0 12px 40px rgba(0,0,0,0.3);}
-.device-btn:active{transform:translateY(-4px) scale(0.98);}
-
-/* OS CONTAINER */
-#os-container{position:fixed;inset:0;opacity:0;pointer-events:none;transition:opacity 0.5s;}
-#os-container.active{opacity:1;pointer-events:auto;}
-body.desktop-mode #os-container{padding:20px;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);display:flex;align-items:center;justify-content:center;}
-body.desktop-mode .device-frame{width:100%;max-width:1200px;height:100%;max-height:800px;background:linear-gradient(180deg,#1e3c72,#2a5298);border-radius:20px;box-shadow:0 25px 80px rgba(0,0,0,0.6);overflow:hidden;position:relative;border:1px solid rgba(255,255,255,0.1);}
-body.mobile-mode .gesture-bar{position:fixed;bottom:8px;left:50%;transform:translateX(-50%);width:120px;height:5px;background:rgba(255,255,255,0.3);border-radius:3px;z-index:9999;transition:all 0.3s;}
-body.mobile-mode .gesture-bar:active{transform:translateX(-50%) scaleX(1.2);background:rgba(255,255,255,0.5);}
-body.desktop-mode .gesture-bar,body.desktop-mode .gesture-hint,body.desktop-mode .gesture-hint-bottom{display:none;}
-
-/* LOCKSCREEN */
-#lockscreen{position:absolute;inset:0;background:linear-gradient(180deg,#000428 0%,#004e92 50%,#000428 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;transform:translateY(0);transition:transform 0.6s cubic-bezier(0.32,0.72,0,1),opacity 0.4s;z-index:1000;cursor:pointer;overflow:hidden;}
-#lockscreen::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(255,255,255,0.1) 0%,transparent 60%);pointer-events:none;}
-#time{font-size:clamp(60px,12vw,90px);font-weight:200;color:white;text-shadow:0 4px 30px rgba(0,0,0,0.4);letter-spacing:-2px;}
-#date{font-size:18px;color:rgba(255,255,255,0.8);margin-top:10px;font-weight:500;}
-#unlock-hint{position:absolute;bottom:100px;color:rgba(255,255,255,0.8);font-size:14px;animation:bounce 2s infinite;font-weight:500;}
-#lockscreen.unlocked{transform:translateY(-100%);opacity:0;pointer-events:none;}
-@keyframes bounce{0%,100%{transform:translateY(0);opacity:0.5;}50%{transform:translateY(-10px);opacity:1;}}
-
-/* HOME */
-#home{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;transform:scale(1.1);transition:opacity 0.4s,transform 0.4s cubic-bezier(0.32,0.72,0,1);z-index:100;background:linear-gradient(180deg,#1e3c72 0%,#2a5298 100%);}
-#home.active{opacity:1;transform:scale(1);}
-.statusbar{height:44px;display:flex;justify-content:space-between;align-items:center;padding:0 25px;font-size:14px;font-weight:600;color:white;background:linear-gradient(180deg,rgba(0,0,0,0.3),transparent);position:relative;z-index:10;}
-.icons{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:20px;padding:30px;align-content:start;overflow-y:auto;}
-.app{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);}
-.app:active{transform:scale(0.88);}
-.icon-wrapper{width:60px;height:60px;border-radius:22%;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 25px rgba(0,0,0,0.3);transition:all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);position:relative;overflow:hidden;}
-.icon-wrapper::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.3) 0%,transparent 50%);opacity:0.6;}
-.app:hover .icon-wrapper{transform:translateY(-5px) scale(1.05) rotate(2deg);box-shadow:0 12px 35px rgba(0,0,0,0.4);}
-.app-icon{width:55%;height:55%;fill:white;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.2));}
-.app-label{font-size:12px;font-weight:500;color:white;text-shadow:0 1px 3px rgba(0,0,0,0.5);letter-spacing:0.3px;}
-.icon-settings{background:linear-gradient(135deg,#8e8e93,#636366);}
-.icon-camera{background:linear-gradient(135deg,#ff3b30,#ff6b6b);}
-.icon-gallery{background:linear-gradient(135deg,#5856d6,#af52de);}
-.icon-music{background:linear-gradient(135deg,#ff2d55,#ff9500);}
-.icon-browser{background:linear-gradient(135deg,#007aff,#5ac8fa);}
-.icon-calc{background:linear-gradient(135deg,#ff9500,#ffcc00);}
-.icon-weather{background:linear-gradient(135deg,#5ac8fa,#34c759);}
-.icon-notes{background:linear-gradient(135deg,#ffcc00,#ff9500);}
-.dock{margin:0 15px 25px;padding:15px;background:rgba(255,255,255,0.15);backdrop-filter:blur(25px);-webkit-backdrop-filter:blur(25px);border-radius:35px;display:flex;justify-content:space-around;align-items:center;border:1px solid rgba(255,255,255,0.1);box-shadow:0 10px 40px rgba(0,0,0,0.3);}
-.dock .icon-wrapper{width:55px;height:55px;border-radius:18px;}
-.dock .app:active{transform:scale(0.9);}
-.icon-phone{background:linear-gradient(135deg,#34c759,#30d158);}
-.icon-messages{background:linear-gradient(135deg,#34c759,#a8e063);}
-
-/* WINDOWS */
-.window{position:absolute;inset:0;background:#f2f2f7;display:none;flex-direction:column;transform:scale(0.9) translateY(20px);opacity:0;transition:all 0.4s cubic-bezier(0.32,0.72,0,1);z-index:500;overflow:hidden;}
-body.desktop-mode .window{border-radius:20px;inset:10px;box-shadow:0 20px 60px rgba(0,0,0,0.4);}
-.window.open{display:flex;transform:scale(1) translateY(0);opacity:1;}
-.window-header{height:50px;background:rgba(255,255,255,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;align-items:center;padding:0 15px;border-bottom:1px solid rgba(0,0,0,0.08);position:relative;z-index:10;}
-.window-title{font-size:17px;font-weight:600;flex:1;text-align:center;color:#000;}
-.window-controls{display:flex;gap:10px;}
-.control-btn{width:12px;height:12px;border-radius:50%;border:none;cursor:pointer;transition:all 0.2s;position:relative;}
-.control-btn:hover{transform:scale(1.2);}
-.control-btn::after{content:'';position:absolute;inset:-4px;border-radius:50%;opacity:0;transition:opacity 0.2s;}
-.control-btn:hover::after{opacity:1;background:rgba(0,0,0,0.1);}
-.control-close{background:#ff5f57;}
-.control-min{background:#ffbd2e;}
-.control-max{background:#28c840;}
-.close-mobile{display:none;}
-body.mobile-mode .window-controls{display:none;}
-body.mobile-mode .close-mobile{display:flex;position:absolute;right:15px;width:30px;height:30px;align-items:center;justify-content:center;cursor:pointer;border-radius:50%;transition:background 0.2s;}
-.close-mobile:hover{background:rgba(0,0,0,0.1);}
-.close-mobile svg{width:16px;height:16px;}
-.window-content{flex:1;overflow-y:auto;position:relative;}
-
-/* NOTIFICATIONS & CONTROL */
-#notif,#control{position:fixed;left:0;right:0;background:rgba(30,30,30,0.95);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);transition:transform 0.5s cubic-bezier(0.32,0.72,0,1);z-index:900;padding:20px;}
-#notif{top:0;transform:translateY(-120%);border-radius:0 0 30px 30px;}
-#notif.show{transform:translateY(0);}
-#control{bottom:0;transform:translateY(110%);border-radius:30px 30px 0 0;}
-#control.show{transform:translateY(0);}
-body.desktop-mode #notif,body.desktop-mode #control{left:50%;right:auto;width:400px;transform:translate(-50%,-120%);}
-body.desktop-mode #notif{top:10px;border-radius:0 0 20px 20px;}
-body.desktop-mode #control{bottom:10px;transform:translate(-50%,110%);border-radius:20px 20px 0 0;}
-body.desktop-mode #notif.show,body.desktop-mode #control.show{transform:translate(-50%,0);}
-.control-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;}
-.control-toggle{aspect-ratio:1;background:rgba(255,255,255,0.1);border-radius:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:all 0.2s;border:1px solid rgba(255,255,255,0.1);}
-.control-toggle:hover{background:rgba(255,255,255,0.15);transform:scale(1.05);}
-.control-toggle.active{background:#007aff;box-shadow:0 4px 15px rgba(0,122,255,0.4);}
-.control-toggle svg{width:26px;height:26px;fill:white;}
-.toggle-label{font-size:11px;color:white;font-weight:500;}
-.gesture-hint{position:fixed;top:0;left:0;right:0;height:30px;z-index:800;cursor:pointer;}
-.gesture-hint-bottom{position:fixed;bottom:0;left:0;right:0;height:40px;z-index:800;cursor:pointer;}
-
-/* APP SPECIFIC STYLES */
-/* Settings */
-.settings-group{background:white;border-radius:12px;overflow:hidden;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,0.1);}
-.settings-item{padding:16px;border-bottom:1px solid #e5e5e5;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:background 0.2s;}
-.settings-item:last-child{border-bottom:none;}
-.settings-item:hover{background:#f9f9f9;}
-.settings-item:active{background:#f0f0f0;}
-.settings-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-right:12px;}
-.settings-row{display:flex;align-items:center;flex:1;}
-.toggle-switch{width:50px;height:30px;background:#ccc;border-radius:15px;position:relative;cursor:pointer;transition:background 0.3s;}
-.toggle-switch.active{background:#007aff;}
-.toggle-knob{width:26px;height:26px;background:white;border-radius:50%;position:absolute;top:2px;left:2px;transition:transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);box-shadow:0 2px 4px rgba(0,0,0,0.2);}
-.toggle-switch.active .toggle-knob{transform:translateX(20px);}
-
-/* Camera */
-.camera-viewfinder{flex:1;background:linear-gradient(45deg,#0f0c29,#302b63,#24243e);position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;}
-.camera-viewfinder::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,0.1) 0%,transparent 50%);pointer-events:none;}
-.camera-info{position:absolute;top:20px;right:20px;color:white;font-size:12px;opacity:0.8;background:rgba(0,0,0,0.3);padding:4px 8px;border-radius:4px;}
-.shutter-btn{width:70px;height:70px;border:4px solid white;border-radius:50%;cursor:pointer;transition:all 0.15s;position:relative;}
-.shutter-btn:active{transform:scale(0.9);}
-.shutter-btn::after{content:'';position:absolute;inset:8px;background:white;border-radius:50%;transition:transform 0.15s;}
-.shutter-btn:active::after{transform:scale(0.8);}
-.camera-modes{position:absolute;bottom:30px;display:flex;gap:30px;}
-.mode-btn{width:40px;height:40px;border-radius:50%;border:2px solid rgba(255,255,255,0.5);cursor:pointer;transition:all 0.2s;background:transparent;}
-.mode-btn:hover,.mode-btn.active{border-color:white;background:rgba(255,255,255,0.2);}
-
-/* Gallery */
-.gallery-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:#000;}
-.gallery-item{aspect-ratio:1;cursor:pointer;transition:all 0.3s;position:relative;overflow:hidden;}
-.gallery-item:hover{opacity:0.8;transform:scale(0.98);}
-.gallery-item.enlarged{position:fixed;inset:0;z-index:10000;border-radius:0;transform:none;}
-.gallery-item.enlarged:hover{opacity:1;transform:none;}
-
-/* Music */
-.music-container{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;background:linear-gradient(180deg,#f2f2f7,#e5e5ea);height:100%;padding:20px;}
-.album-art{width:min(260px,50vw);height:min(260px,50vw);background:linear-gradient(135deg,#667eea,#764ba2);border-radius:12px;box-shadow:0 20px 60px rgba(102,126,234,0.4);position:relative;overflow:hidden;animation:float 6s ease-in-out infinite;}
-.album-art::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(255,255,255,0.2) 0%,transparent 70%);}
-@keyframes float{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-10px) rotate(1deg);}}
-.music-info{text-align:center;}
-.music-title{font-size:22px;font-weight:700;margin-bottom:6px;color:#000;}
-.music-artist{color:#8e8e93;font-size:15px;}
-.progress-container{width:min(300px,80%);height:4px;background:#e0e0e0;border-radius:2px;cursor:pointer;position:relative;}
-.progress-bar{position:absolute;left:0;top:0;height:100%;width:35%;background:#007AFF;border-radius:2px;transition:width 0.1s;}
-.progress-knob{position:absolute;left:35%;top:50%;transform:translate(-50%,-50%);width:12px;height:12px;background:#007AFF;border-radius:50%;box-shadow:0 2px 4px rgba(0,0,0,0.2);opacity:0;transition:opacity 0.2s;}
-.progress-container:hover .progress-knob{opacity:1;}
-.music-controls{display:flex;align-items:center;gap:35px;}
-.control-btn-music{background:none;border:none;font-size:24px;cursor:pointer;opacity:0.6;transition:all 0.2s;padding:10px;border-radius:50%;}
-.control-btn-music:hover{opacity:1;background:rgba(0,0,0,0.05);}
-.play-btn{width:60px;height:60px;background:#007AFF;border:none;border-radius:50%;color:white;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 15px rgba(0,122,255,0.4);transition:all 0.2s;}
-.play-btn:hover{transform:scale(1.1);box-shadow:0 6px 20px rgba(0,122,255,0.6);}
-.play-btn:active{transform:scale(0.95);}
-
-/* Browser */
-.browser-toolbar{padding:10px;display:flex;gap:10px;align-items:center;border-bottom:1px solid #e0e0e0;background:#f2f2f7;}
-.browser-btn{background:none;border:none;font-size:16px;opacity:0.5;cursor:pointer;padding:8px;border-radius:6px;transition:all 0.2s;}
-.browser-btn:hover{opacity:1;background:rgba(0,0,0,0.05);}
-.address-bar{flex:1;background:white;padding:8px 15px;border-radius:10px;font-size:14px;color:#333;box-shadow:0 1px 3px rgba(0,0,0,0.1);display:flex;align-items:center;gap:8px;}
-.browser-content{flex:1;display:flex;align-items:center;justify-content:center;color:#8e8e93;flex-direction:column;gap:15px;background:white;}
-
-/* Calculator */
-.calc-display{flex:1;display:flex;align-items:flex-end;justify-content:flex-end;padding:20px;font-size:64px;font-weight:300;color:white;word-break:break-all;background:black;}
-.calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:12px;background:black;}
-.calc-btn{aspect-ratio:1;border-radius:50%;border:none;font-size:28px;cursor:pointer;transition:all 0.1s;font-weight:500;}
-.calc-btn:active{transform:scale(0.9);}
-.calc-btn.gray{background:#a5a5a5;color:black;}
-.calc-btn.dark{background:#333;color:white;}
-.calc-btn.orange{background:#ff9f0a;color:white;}
-.calc-btn.wide{grid-column:span 2;border-radius:35px;aspect-ratio:auto;}
-
-/* Weather */
-.weather-container{background:linear-gradient(180deg,#4facfe,#00f2fe);color:white;height:100%;padding:30px;display:flex;flex-direction:column;}
-.weather-main{text-align:center;margin-top:20px;}
-.weather-city{font-size:28px;font-weight:600;margin-bottom:8px;}
-.weather-temp{font-size:100px;font-weight:200;margin:15px 0;letter-spacing:-5px;}
-.weather-desc{font-size:20px;opacity:0.9;margin-bottom:25px;}
-.weather-hl{display:flex;justify-content:center;gap:50px;font-size:15px;opacity:0.8;}
-.forecast{margin-top:30px;background:rgba(255,255,255,0.2);border-radius:16px;padding:15px;backdrop-filter:blur(10px);}
-.forecast-item{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.2);}
-.forecast-item:last-child{border-bottom:none;}
-
-/* Notes */
-.notes-container{background:#f2f2f7;height:100%;padding:20px;}
-.note-card{background:#feff9c;padding:20px;border-radius:12px;min-height:400px;box-shadow:0 2px 10px rgba(0,0,0,0.1);color:#333;line-height:1.6;font-size:16px;position:relative;}
-.note-date{font-weight:700;margin-bottom:15px;color:#666;font-size:13px;text-transform:uppercase;letter-spacing:1px;}
-.note-content{outline:none;min-height:300px;cursor:text;}
-.note-content:focus{outline:none;}
-
-/* Phone */
-.phone-display{padding:30px;text-align:center;font-size:36px;color:#000;min-height:80px;display:flex;align-items:center;justify-content:center;letter-spacing:2px;font-weight:300;}
-.phone-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;padding:20px;max-width:300px;margin:0 auto;}
-.phone-btn{aspect-ratio:1;border-radius:50%;border:none;background:white;font-size:28px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.1);transition:all 0.2s;font-weight:400;}
-.phone-btn:active{transform:scale(0.9);box-shadow:0 1px 4px rgba(0,0,0,0.1);}
-.phone-actions{display:flex;justify-content:center;gap:20px;padding:20px;}
-.call-btn{width:70px;height:70px;border-radius:50%;border:none;background:#34c759;color:white;font-size:28px;cursor:pointer;box-shadow:0 4px 15px rgba(52,199,89,0.4);transition:all 0.2s;}
-.call-btn:active{transform:scale(0.9);}
-.clear-btn{width:70px;height:70px;border-radius:50%;border:none;background:#ff3b30;color:white;font-size:24px;cursor:pointer;box-shadow:0 4px 15px rgba(255,59,48,0.4);transition:all 0.2s;}
-.clear-btn:active{transform:scale(0.9);}
-
-/* Messages */
-.messages-list{padding:15px;}
-.message-item{background:white;padding:15px;border-radius:12px;margin-bottom:10px;display:flex;gap:12px;align-items:center;cursor:pointer;transition:all 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.05);}
-.message-item:hover{transform:translateX(5px);box-shadow:0 4px 12px rgba(0,0,0,0.1);}
-.message-avatar{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:20px;font-weight:600;flex-shrink:0;}
-.message-content{flex:1;}
-.message-name{font-weight:600;margin-bottom:4px;color:#000;}
-.message-preview{color:#8e8e93;font-size:14px;}
-.message-time{color:#8e8e93;font-size:12px;flex-shrink:0;}
-.new-message-btn{position:absolute;bottom:20px;right:20px;width:60px;height:60px;border-radius:50%;background:#007AFF;display:flex;align-items:center;justify-content:center;color:white;font-size:28px;cursor:pointer;box-shadow:0 4px 15px rgba(0,122,255,0.4);transition:all 0.2s;border:none;}
-.new-message-btn:hover{transform:scale(1.1);box-shadow:0 6px 20px rgba(0,122,255,0.6);}
-.new-message-btn:active{transform:scale(0.95);}
-
-/* Toast Notification */
-.toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.9);background:rgba(0,0,0,0.9);color:white;padding:15px 25px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:all 0.3s;z-index:10001;backdrop-filter:blur(10px);text-align:center;max-width:80%;}
-.toast.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .icons{grid-template-columns:repeat(4,1fr);gap:15px;padding:20px;}
-  .app-label{font-size:11px;}
-  .icon-wrapper{width:55px;height:55px;}
-  .dock{margin:0 10px 20px;padding:12px;}
-  .dock .icon-wrapper{width:50px;height:50px;}
+// build.gradle.kts (Project level)
+plugins {
+    id("com.android.application") version "8.2.0" apply false
+    id("org.jetbrains.kotlin.android") version "1.9.20" apply false
 }
-</style>
-</head>
-<body>
-
-<!-- SELECTOR -->
-<div id="device-selector">
-  <h1 style="color:white;font-size:42px;font-weight:700;letter-spacing:-1px;text-shadow:0 4px 30px rgba(0,0,0,0.3);">SkyOS</h1>
-  <div style="display:flex;gap:25px;">
-    <button class="device-btn" onclick="selectDevice('mobile')">
-      <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg>
-      <span style="font-size:16px;font-weight:600;">Celular</span>
-    </button>
-    <button class="device-btn" onclick="selectDevice('desktop')">
-      <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-      <span style="font-size:16px;font-weight:600;">Laptop</span>
-    </button>
-  </div>
-  <p style="color:rgba(255,255,255,0.7);font-size:14px;margin-top:10px;">Selecciona tu dispositivo para continuar</p>
-</div>
-
-<!-- OS -->
-<div id="os-container">
-  <div class="gesture-hint" onclick="toggleNotif()"></div>
-  <div class="gesture-hint-bottom" onclick="toggleControl()"></div>
-  <div class="gesture-bar" onclick="goHome()"></div>
-  
-  <div class="device-frame">
-    <!-- LOCKSCREEN -->
-    <div id="lockscreen" onclick="unlock()">
-      <div id="time">00:00</div>
-      <div id="date">Lunes, 16 de marzo</div>
-      <div id="unlock-hint">Toca para desbloquear</div>
-    </div>
-
-    <!-- HOME -->
-    <div id="home">
-      <div class="statusbar">
-        <span id="statusTime">00:00</span>
-        <div style="display:flex;gap:5px;align-items:center;">
-          <span>📶</span>
-          <span>🔋</span>
-        </div>
-      </div>
-      
-      <div class="icons">
-        <div class="app" onclick="openApp('settings')">
-          <div class="icon-wrapper icon-settings">
-            <svg class="app-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="white" stroke-width="2"/><path d="M12 1v6m0 6v6m4-10l4-4M6 6L2 2m20 20l-4-4M6 18l-4 4M23 12h-6M1 12h6m14 4l-4-4M6 14l-4 4" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
-          </div>
-          <span class="app-label">Ajustes</span>
-        </div>
-        <div class="app" onclick="openApp('camera')">
-          <div class="icon-wrapper icon-camera">
-            <svg class="app-icon" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="13" r="4" fill="none" stroke="white" stroke-width="2"/></svg>
-          </div>
-          <span class="app-label">Cámara</span>
-        </div>
-        <div class="app" onclick="openApp('gallery')">
-          <div class="icon-wrapper icon-gallery">
-            <svg class="app-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="white" stroke-width="2"/><circle cx="8.5" cy="8.5" r="1.5" fill="white"/><polyline points="21 15 16 10 5 21" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-          <span class="app-label">Galería</span>
-        </div>
-        <div class="app" onclick="openApp('music')">
-          <div class="icon-wrapper icon-music">
-            <svg class="app-icon" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="18" r="3" fill="none" stroke="white" stroke-width="2"/><circle cx="18" cy="16" r="3" fill="none" stroke="white" stroke-width="2"/></svg>
-          </div>
-          <span class="app-label">Música</span>
-        </div>
-        <div class="app" onclick="openApp('browser')">
-          <div class="icon-wrapper icon-browser">
-            <svg class="app-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="white" stroke-width="2"/><line x1="2" y1="12" x2="22" y2="12" stroke="white" stroke-width="2"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" fill="none" stroke="white" stroke-width="2"/></svg>
-          </div>
-          <span class="app-label">Safari</span>
-        </div>
-        <div class="app" onclick="openApp('calc')">
-          <div class="icon-wrapper icon-calc">
-            <svg class="app-icon" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2" fill="none" stroke="white" stroke-width="2"/><line x1="8" y1="6" x2="16" y2="6" stroke="white" stroke-width="2"/><line x1="8" y1="10" x2="16" y2="10" stroke="white" stroke-width="2"/><line x1="8" y1="14" x2="16" y2="14" stroke="white" stroke-width="2"/><line x1="8" y1="18" x2="16" y2="18" stroke="white" stroke-width="2"/></svg>
-          </div>
-          <span class="app-label">Calc</span>
-        </div>
-        <div class="app" onclick="openApp('weather')">
-          <div class="icon-wrapper icon-weather">
-            <svg class="app-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="none" stroke="white" stroke-width="2"/><line x1="12" y1="1" x2="12" y2="3" stroke="white" stroke-width="2"/><line x1="12" y1="21" x2="12" y2="23" stroke="white" stroke-width="2"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="white" stroke-width="2"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="white" stroke-width="2"/><line x1="1" y1="12" x2="3" y2="12" stroke="white" stroke-width="2"/><line x1="21" y1="12" x2="23" y2="12" stroke="white" stroke-width="2"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="white" stroke-width="2"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="white" stroke-width="2"/></svg>
-          </div>
-          <span class="app-label">Clima</span>
-        </div>
-        <div class="app" onclick="openApp('notes')">
-          <div class="icon-wrapper icon-notes">
-            <svg class="app-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="14 2 14 8 20 8" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="16" y1="13" x2="8" y2="13" stroke="white" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="17" x2="8" y2="17" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
-          </div>
-          <span class="app-label">Notas</span>
-        </div>
-      </div>
-
-      <div class="dock">
-        <div class="app" onclick="openApp('phone')">
-          <div class="icon-wrapper icon-phone">
-            <svg class="app-icon" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7 12.8 12.8 0 0 0 .7 2.8 2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5 12.8 12.8 0 0 0 2.8.7A2 2 0 0 1 22 16.9z" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-        </div>
-        <div class="app" onclick="openApp('messages')">
-          <div class="icon-wrapper icon-messages">
-            <svg class="app-icon" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5z" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-        </div>
-        <div class="app" onclick="openApp('browser')">
-          <div class="icon-wrapper icon-browser">
-            <svg class="app-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="white" stroke-width="2"/><line x1="2" y1="12" x2="22" y2="12" stroke="white" stroke-width="2"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" fill="none" stroke="white" stroke-width="2"/></svg>
-          </div>
-        </div>
-        <div class="app" onclick="openApp('camera')">
-          <div class="icon-wrapper icon-camera">
-            <svg class="app-icon" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="13" r="4" fill="none" stroke="white" stroke-width="2"/></svg>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- NOTIFICATIONS -->
-    <div id="notif" onclick="if(event.target===this)toggleNotif()">
-      <h3 style="color:white;margin-bottom:20px;font-size:20px;font-weight:600;">Notificaciones</h3>
-      <div style="background:rgba(255,255,255,0.1);padding:15px;border-radius:12px;color:white;border:1px solid rgba(255,255,255,0.1);">
-        <div style="font-weight:600;margin-bottom:5px;display:flex;align-items:center;gap:10px;">
-          <div style="width:8px;height:8px;background:#34c759;border-radius:50%;"></div>
-          SkyOS
-        </div>
-        <div style="opacity:0.8;font-size:14px;line-height:1.4;">Bienvenido a la versión 2.0. Sistema operativo mejorado y optimizado.</div>
-        <div style="margin-top:10px;font-size:12px;opacity:0.6;">Ahora</div>
-      </div>
-    </div>
-
-    <!-- CONTROL CENTER -->
-    <div id="control">
-      <div class="control-grid">
-        <div class="control-toggle active" onclick="this.classList.toggle('active')">
-          <svg viewBox="0 0 24 24" fill="white"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8z"/><circle cx="12" cy="12" r="3"/></svg>
-          <span class="toggle-label">Wi-Fi</span>
-        </div>
-        <div class="control-toggle" onclick="this.classList.toggle('active')">
-          <svg viewBox="0 0 24 24" fill="white"><path d="M17.7 9.3l-5-5a1 1 0 0 0-1.4 0l-5 5a1 1 0 0 0 1.4 1.4L11 7.4V19a1 1 0 0 0 2 0V7.4l3.3 3.3a1 1 0 0 0 1.4 0 1 1 0 0 0 0-1.4z"/></svg>
-          <span class="toggle-label">AirDrop</span>
-        </div>
-        <div class="control-toggle active" onclick="this.classList.toggle('active')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5l11 11M12 2a10 10 0 0 1 10 10M12 22a10 10 0 0 1-10-10"/></svg>
-          <span class="toggle-label">Bluetooth</span>
-        </div>
-        <div class="control-toggle" onclick="this.classList.toggle('active')">
-          <svg viewBox="0 0 24 24" fill="white"><path d="M12 2a10 10 0 0 1 10 10 10 10 0 0 1-10 10A10 10 0 0 1 2 12 10 10 0 0 1 12 2m0 2a8 8 0 0 0-8 8c0 4.4 3.6 8 8 8s8-3.6 8-8-3.6-8-8-8m0 2a6 6 0 0 1 6 6 6 6 0 0 1-6 6 6 6 0 0 1-6-6 6 6 0 0 1 6-6m0 2a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4z"/></svg>
-          <span class="toggle-label">Airplane</span>
-        </div>
-        <div class="control-toggle" onclick="toggleFlashlight(this)">
-          <svg viewBox="0 0 24 24" fill="white"><path d="M13 2v4h-2V2h2zm4 4h-2v4h2V6zm-8 0H7v4h2V6zm10 4h-2v4h2v-4zm-8 0h-2v4h2v-4zm-4 4H5v4h2v-4zm16 0h-2v4h2v-4zM7 18h2v4H7v-4zm4 0h2v4h-2v-4zm4 0h2v4h-2v-4z"/></svg>
-          <span class="toggle-label">Flash</span>
-        </div>
-        <div class="control-toggle" onclick="this.classList.toggle('active')">
-          <svg viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
-          <span class="toggle-label">Focus</span>
-        </div>
-      </div>
-      <div style="margin-top:20px;background:rgba(255,255,255,0.1);border-radius:12px;padding:15px;display:flex;align-items:center;justify-content:space-between;">
-        <span style="color:white;font-size:14px;">Brillo</span>
-        <div style="flex:1;margin-left:15px;height:6px;background:rgba(255,255,255,0.2);border-radius:3px;position:relative;cursor:pointer;" onclick="adjustBrightness(event,this)">
-          <div id="brightness-bar" style="position:absolute;left:0;top:0;height:100%;width:70%;background:white;border-radius:3px;"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- APP: Settings -->
-    <div id="settings" class="window">
-      <div class="window-header">
-        <div class="window-controls">
-          <button class="control-btn control-close" onclick="closeApp()"></button>
-          <button class="control-btn control-min" onclick="closeApp()"></button>
-          <button class="control-btn control-max"></button>
-        </div>
-        <div class="window-title">Ajustes</div>
-        <div class="close-mobile" onclick="closeApp()">
-          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-      </div>
-      <div class="window-content" style="background:#f2f2f7;padding:20px;">
-        <div class="settings-group">
-          <div class="settings-item">
-            <div class="settings-row">
-              <div class="settings-icon" style="background:#007AFF;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8z"/><circle cx="12" cy="12" r="3"/></svg>
-              </div>
-              <span>Modo Avión</span>
-            </div>
-            <div class="toggle-switch" onclick="toggleSwitch(this)">
-              <div class="toggle-knob"></div>
-            </div>
-          </div>
-          <div class="settings-item" onclick="showToast('Wi-Fi: PhantomNet')">
-            <div class="settings-row">
-              <div class="settings-icon" style="background:#007AFF;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              </div>
-              <span>Wi-Fi</span>
-            </div>
-            <span style="color:#8e8e93;font-size:14px;">PhantomNet ▸</span>
-          </div>
-          <div class="settings-item" onclick="showToast('Bluetooth activado')">
-            <div class="settings-row">
-              <div class="settings-icon" style="background:#007AFF;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5l11 11M12 2a10 10 0 0 1 10 10M12 22a10 10 0 0 1-10-10"/></svg>
-              </div>
-              <span>Bluetooth</span>
-            </div>
-            <span style="color:#8e8e93;font-size:14px;">Activado ▸</span>
-          </div>
-        </div>
-        <div class="settings-group">
-          <div class="settings-item" onclick="showToast('SkyOS v2.0\nBuild 2024.16.3')">
-            <div class="settings-row">
-              <div class="settings-icon" style="background:#8e8e93;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
-              </div>
-              <span>Acerca de</span>
-            </div>
-            <span style="color:#8e8e93;font-size:14px;">SkyOS 2.0 ▸</span>
-          </div>
-          <div class="settings-item" onclick="showToast('Wallpaper cambiado')">
-            <div class="settings-row">
-              <div class="settings-icon" style="background:#5856d6;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21" fill="none" stroke="white" stroke-width="2"/></svg>
-              </div>
-              <span>Fondo de pantalla</span>
-            </div>
-            <span style="color:#8e8e93;font-size:14px;">▸</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- APP: Camera -->
-    <div id="camera" class="window">
-      <div class="window-header" style="background:rgba(0,0,0,0.5);color:white;border:none;">
-        <div class="window-controls">
-          <button class="control-btn control-close" style="background:#ff5f57;" onclick="closeApp()"></button>
-          <button class="control-btn control-min" style="background:#ffbd2e;" onclick="closeApp()"></button>
-          <button class="control-btn control-max" style="background:#28c840;"></button>
-        </div>
-        <div class="window-title" style="color:white;">Cámara</div>
-        <div class="close-mobile" onclick="closeApp()">
-          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-      </div>
-      <div class="camera-viewfinder">
-        <div class="camera-info">HD • 60FPS</div>
-        <div class="shutter-btn" onclick="shutterEffect(this)"></div>
-        <div class="camera-modes">
-          <div class="mode-btn" onclick="this.classList.toggle('active')"></div>
-          <div class="mode-btn active" onclick="this.classList.toggle('active')"></div>
-          <div class="mode-btn" onclick="this.classList.toggle('active')"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- APP: Gallery -->
-    <div id="gallery" class="window">
-      <div class="window-header">
-        <div class="window-controls">
-          <button class="control-btn control-close" onclick="closeApp()"></button>
-          <button class="control-btn control-min" onclick="closeApp()"></button>
-          <button class="control-btn control-max"></button>
-        </div>
-        <div class="window-title">Galería</div>
-        <div class="close-mobile" onclick="closeApp()">
-          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-      </div>
-      <div class="window-content" style="padding:0;">
-        <div class="gallery-grid">
-          <div class="gallery-item" style="background:linear-gradient(135deg,#667eea,#764ba2);" onclick="enlargePhoto(this)"></div>
-          <div class="gallery-item" style="background:linear-gradient(135deg,#f093fb,#f5576c);" onclick="enlargePhoto(this)"></div>
-          <div class="gallery-item" style="background:linear-gradient(135deg,#4facfe,#00f2fe);" onclick="enlargePhoto(this)"></div>
-          <div class="gallery-item" style="background:linear-gradient(135deg,#43e97b,#38f9d7);" onclick="enlargePhoto(this)"></div>
-          <div class="gallery-item" style="background:linear-gradient(135deg,#fa709a,#fee140);" onclick="enlargePhoto(this)"></div>
-          <div class="gallery-item" style="background:linear-gradient(135deg,#30cfd0,#330867);" onclick="enlargePhoto(this)"></div>
-          <div class="gallery-item" style="background:linear-gradient(135deg,#a8edea,#fed6e3);" onclick="enlargePhoto(this)"></div>
-          <div class="gallery-item" style="background:linear-gradient(135deg,#ff9a9e,#fecfef);" onclick="enlargePhoto(this)"></div>
-          <div class="gallery-item" style="background:linear-gradient(135deg,#ffecd2,#fcb69f);" onclick="enlargePhoto(this)"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- APP: Music -->
-    <div id="music" class="window">
-      <div class="window-header">
-        <div class="window-controls">
-          <button class="control-btn control-close" onclick="closeApp()"></button>
-          <button class="control-btn control-min" onclick="closeApp()"></button>
-          <button class="control-btn control-max"></button>
-        </div>
-        <div class="window-title">Música</div>
-        <div class="close-mobile" onclick="closeApp()">
-          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-      </div>
-      <div class="window-content" style="padding:0;">
-        <div class="music-container">
-          <div class="album-art"></div>
-          <div class="music-info">
-            <div class="music-title">Midnight City</div>
-            <div class="music-artist">M83 • Hurry Up, We're Dreaming</div>
-          </div>
-          <div class="progress-container" onclick="seekMusic(event,this)">
-            <div class="progress-bar" id="music-progress"></div>
-            <div class="progress-knob"></div>
-          </div>
-          <div class="music-controls">
-            <button class="control-btn-music">⏮</button>
-            <button class="play-btn" id="play-btn" onclick="togglePlay(this)">▶</button>
-            <button class="control-btn-music">⏭</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- APP: Browser -->
-    <div id="browser" class="window">
-      <div class="window-header">
-        <div class="window-controls">
-          <button class="control-btn control-close" onclick="closeApp()"></button>
-          <button class="control-btn control-min" onclick="closeApp()"></button>
-          <button class="control-btn control-max"></button>
-        </div>
-        <div class="window-title">Safari</div>
-        <div class="close-mobile" onclick="closeApp()">
-          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-      </div>
-      <div style="background:#f2f2f7;flex:1;display:flex;flex-direction:column;">
-        <div class="browser-toolbar">
-          <button class="browser-btn">←</button>
-          <button class="browser-btn">→</button>
-          <button class="browser-btn">⟳</button>
-          <div class="address-bar" onclick="this.querySelector('span').textContent='Buscando...';setTimeout(()=>this.querySelector('span').textContent='phantomos.com',1000)">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-            <span style="color:#8e8e93;">phantomos.com</span>
-          </div>
-        </div>
-        <div class="browser-content">
-          <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-          <div style="font-size:18px;color:#666;">Página de inicio</div>
-          <div style="font-size:13px;color:#999;">Versión de demostración</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- APP: Calculator -->
-    <div id="calc" class="window">
-      <div class="window-header">
-        <div class="window-controls">
-          <button class="control-btn control-close" onclick="closeApp()"></button>
-          <button class="control-btn control-min" onclick="closeApp()"></button>
-          <button class="control-btn control-max"></button>
-        </div>
-        <div class="window-title">Calculadora</div>
-        <div class="close-mobile" onclick="closeApp()">
-          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-      </div>
-      <div style="flex:1;background:black;display:flex;flex-direction:column;">
-        <div class="calc-display" id="calc-display">0</div>
-        <div class="calc-grid">
-          <button class="calc-btn gray" onclick="calcInput('AC')">AC</button>
-          <button class="calc-btn gray" onclick="calcInput('+/-')">+/-</button>
-          <button class="calc-btn gray" onclick="calcInput('%')">%</button>
-          <button class="calc-btn orange" onclick="calcInput('/')">÷</button>
-          <button class="calc-btn dark" onclick="calcInput('7')">7</button>
-          <button class="calc-btn dark" onclick="calcInput('8')">8</button>
-          <button class="calc-btn dark" onclick="calcInput('9')">9</button>
-          <button class="calc-btn orange" onclick="calcInput('*')">×</button>
-          <button class="calc-btn dark" onclick="calcInput('4')">4</button>
-          <button class="calc-btn dark" onclick="calcInput('5')">5</button>
-          <button class="calc-btn dark" onclick="calcInput('6')">6</button>
-          <button class="calc-btn orange" onclick="calcInput('-')">−</button>
-          <button class="calc-btn dark" onclick="calcInput('1')">1</button>
-          <button class="calc-btn dark" onclick="calcInput('2')">2</button>
-          <button class="calc-btn dark" onclick="calcInput('3')">3</button>
-          <button class="calc-btn orange" onclick="calcInput('+')">+</button>
-          <button class="calc-btn dark wide" onclick="calcInput('0')">0</button>
-          <button class="calc-btn dark" onclick="calcInput('.')">.</button>
-          <button class="calc-btn orange" onclick="calcInput('=')">=</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- APP: Weather -->
-    <div id="weather" class="window">
-      <div class="window-header">
-        <div class="window-controls">
-          <button class="control-btn control-close" onclick="closeApp()"></button>
-          <button class="control-btn control-min" onclick="closeApp()"></button>
-          <button class="control-btn control-max"></button>
-        </div>
-        <div class="window-title">Clima</div>
-        <div class="close-mobile" onclick="closeApp()">
-          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-      </div>
-      <div class="window-content" style="padding:0;">
-        <div class="weather-container">
-          <div class="weather-main">
-            <div class="weather-city">Madrid</div>
-            <div class="weather-temp">24°</div>
-            <div class="weather-desc">Soleado</div>
-            <div class="weather-hl">
-              <div>H: 28°</div>
-              <div>L: 18°</div>
-            </div>
-          </div>
-          <div class="forecast">
-            <div class="forecast-item">
-              <span>Hoy</span><span>24° / 18°</span>
-            </div>
-            <div class="forecast-item">
-              <span>Mañana</span><span>26° / 19°</span>
-            </div>
-            <div class="forecast-item">
-              <span>Miércoles</span><span>23° / 17°</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- APP: Notes -->
-    <div id="notes" class="window">
-      <div class="window-header">
-        <div class="window-controls">
-          <button class="control-btn control-close" onclick="closeApp()"></button>
-          <button class="control-btn control-min" onclick="closeApp()"></button>
-          <button class="control-btn control-max"></button>
-        </div>
-        <div class="window-title">Notas</div>
-        <div class="close-mobile" onclick="closeApp()">
-          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-      </div>
-      <div class="window-content" style="padding:0;">
-        <div class="notes-container">
-          <div class="note-card">
-            <div class="note-date">Hoy, 16 de marzo</div>
-            <div class="note-content" contenteditable="true">
-📝 Lista de compras:<br><br>
-- Leche<br>
-- Pan<br>
-- Frutas<br>
-- Café<br><br>
-Recordar:<br>
-Llamar a mamá ☎️<br><br>
-Ideas app:<br>
-• Modo oscuro<br>
-• Widgets home<br>
-• Mejor cámara
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- APP: Phone -->
-    <div id="phone" class="window">
-      <div class="window-header" style="background:#34c759;">
-        <div class="window-controls">
-          <button class="control-btn control-close" onclick="closeApp()"></button>
-          <button class="control-btn control-min" onclick="closeApp()"></button>
-          <button class="control-btn control-max"></button>
-        </div>
-        <div class="window-title" style="color:white;">Teléfono</div>
-        <div class="close-mobile" onclick="closeApp()">
-          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-      </div>
-      <div class="window-content" style="padding:0;background:#f2f2f7;">
-        <div class="phone-display" id="phone-display"></div>
-        <div class="phone-pad">
-          <button class="phone-btn" onclick="dialNumber('1')">1</button>
-          <button class="phone-btn" onclick="dialNumber('2')">2</button>
-          <button class="phone-btn" onclick="dialNumber('3')">3</button>
-          <button class="phone-btn" onclick="dialNumber('4')">4</button>
-          <button class="phone-btn" onclick="dialNumber('5')">5</button>
-          <button class="phone-btn" onclick="dialNumber('6')">6</button>
-          <button class="phone-btn" onclick="dialNumber('7')">7</button>
-          <button class="phone-btn" onclick="dialNumber('8')">8</button>
-          <button class="phone-btn" onclick="dialNumber('9')">9</button>
-          <button class="phone-btn" onclick="dialNumber('*')">*</button>
-          <button class="phone-btn" onclick="dialNumber('0')">0</button>
-          <button class="phone-btn" onclick="dialNumber('#')">#</button>
-        </div>
-        <div class="phone-actions">
-          <button class="call-btn" onclick="makeCall()">📞</button>
-                    <button class="clear-btn" onclick="clearDial()">⌫</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- APP: Messages -->
-    <div id="messages" class="window">
-      <div class="window-header" style="background:#34c759;">
-        <div class="window-controls">
-          <button class="control-btn control-close" onclick="closeApp()"></button>
-          <button class="control-btn control-min" onclick="closeApp()"></button>
-          <button class="control-btn control-max"></button>
-        </div>
-        <div class="window-title" style="color:white;">Mensajes</div>
-        <div class="close-mobile" onclick="closeApp()">
-          <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
-      </div>
-      <div class="window-content" style="padding:0;background:#f2f2f7;">
-        <div class="messages-list">
-          <div class="message-item" onclick="showToast('Abriendo conversación con Ana')">
-            <div class="message-avatar" style="background:linear-gradient(135deg,#667eea,#764ba2);">A</div>
-            <div class="message-content">
-              <div class="message-name">Ana</div>
-              <div class="message-preview">¿Nos vemos mañana? 👋</div>
-            </div>
-            <div class="message-time">10:30</div>
-          </div>
-          <div class="message-item" onclick="showToast('Abriendo conversación con Mamá')">
-            <div class="message-avatar" style="background:linear-gradient(135deg,#f093fb,#f5576c);">M</div>
-            <div class="message-content">
-              <div class="message-name">Mamá</div>
-              <div class="message-preview">No olvides la cena 🍽️</div>
-            </div>
-            <div class="message-time">Ayer</div>
-          </div>
-          <div class="message-item" onclick="showToast('Abriendo conversación de Trabajo')">
-            <div class="message-avatar" style="background:linear-gradient(135deg,#4facfe,#00f2fe);">T</div>
-            <div class="message-content">
-              <div class="message-name">Trabajo</div>
-              <div class="message-preview">Reunión a las 3pm 📅</div>
-            </div>
-            <div class="message-time">Lun</div>
-          </div>
-        </div>
-        <button class="new-message-btn" onclick="showToast('Nuevo mensaje')">+</button>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<!-- Toast Notification -->
-<div id="toast" class="toast"></div>
-
-<script>
-let currentMode='mobile';
-let startY=0;
-let startX=0;
-let isSwiping=false;
-
-function selectDevice(mode){
-  currentMode=mode;
-  document.body.className=mode+'-mode';
-  document.getElementById('device-selector').classList.add('hidden');
-  document.getElementById('os-container').classList.add('active');
-  if(mode==='desktop')document.getElementById('unlock-hint').textContent='Haz clic para desbloquear';
-  setTimeout(updateClock,100);
+// app/build.gradle.kts
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
 }
 
-function updateClock(){
-  const now=new Date();
-  const h=now.getHours().toString().padStart(2,'0');
-  const m=now.getMinutes().toString().padStart(2,'0');
-  const timeStr=h+':'+m;
-  document.getElementById('time').textContent=timeStr;
-  document.getElementById('statusTime').textContent=timeStr;
-  
-  const dias=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-  const meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  const diaSemana=dias[now.getDay()];
-  const dia=now.getDate();
-  const mes=meses[now.getMonth()];
-  document.getElementById('date').textContent=`${diaSemana}, ${dia} de ${mes}`;
-  
-  setTimeout(updateClock,1000);
-}
+android {
+    namespace = "com.coloros.launcher"
+    compileSdk = 34
 
-function unlock(){
-  document.getElementById('lockscreen').classList.add('unlocked');
-  document.getElementById('home').classList.add('active');
-}
-
-function openApp(name){
-  const app=document.getElementById(name);
-  if(app){
-    app.classList.add('open');
-    app.style.transform='scale(1) translateY(0)';
-    app.style.opacity='1';
-  }
-}
-
-function closeApp(){
-  const openWindow=document.querySelector('.window.open');
-  if(!openWindow)return;
-  
-  if(currentMode==='mobile'){
-    openWindow.style.transition='transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.3s';
-    openWindow.style.transform='scale(0.9) translateY(100px)';
-    openWindow.style.opacity='0';
-    setTimeout(()=>{
-      openWindow.classList.remove('open');
-      openWindow.style.transform='';
-      openWindow.style.opacity='';
-    },400);
-  }else{
-    openWindow.style.transform='scale(0.9)';
-    openWindow.style.opacity='0';
-    setTimeout(()=>{
-      openWindow.classList.remove('open');
-      openWindow.style.transform='';
-      openWindow.style.opacity='';
-    },300);
-  }
-}
-
-function goHome(){
-  closeApp();
-}
-
-function toggleNotif(){
-  document.getElementById('notif').classList.toggle('show');
-  document.getElementById('control').classList.remove('show');
-}
-
-function toggleControl(){
-  document.getElementById('control').classList.toggle('show');
-  document.getElementById('notif').classList.remove('show');
-}
-
-// Touch gestures
-document.addEventListener('touchstart',e=>{
-  startY=e.touches[0].clientY;
-  startX=e.touches[0].clientX;
-  isSwiping=true;
-},{passive:true});
-
-document.addEventListener('touchmove',e=>{
-  if(!isSwiping)return;
-  const openWindow=document.querySelector('.window.open');
-  if(!openWindow||currentMode!=='mobile')return;
-  
-  const currentY=e.touches[0].clientY;
-  const diff=currentY-startY;
-  
-  if(diff>0&&startY<100){
-    e.preventDefault();
-    const progress=Math.min(diff/300,1);
-    openWindow.style.transform=`scale(${1-progress*0.1}) translateY(${diff*0.5}px)`;
-    openWindow.style.opacity=1-progress*0.5;
-  }
-},{passive:false});
-
-document.addEventListener('touchend',e=>{
-  if(!isSwiping)return;
-  isSwiping=false;
-  
-  const endY=e.changedTouches[0].clientY;
-  const diff=endY-startY;
-  const openWindow=document.querySelector('.window.open');
-  
-  if(openWindow&&currentMode==='mobile'&&startY<100&&diff>100){
-    closeApp();
-  }else if(openWindow&&currentMode==='mobile'){
-    openWindow.style.transition='transform 0.3s, opacity 0.3s';
-    openWindow.style.transform='scale(1) translateY(0)';
-    openWindow.style.opacity='1';
-    setTimeout(()=>{
-      openWindow.style.transition='';
-    },300);
-  }
-  
-  if(startY<50&&diff>50)toggleNotif();
-  else if(startY>window.innerHeight-50&&diff<-50)toggleControl();
-  else if(document.getElementById('notif').classList.contains('show')&&diff<-50)toggleNotif();
-  else if(document.getElementById('control').classList.contains('show')&&diff>50)toggleControl();
-},{passive:true});
-
-// Keyboard shortcuts
-document.addEventListener('keydown',e=>{
-  if(e.key==='Escape')closeApp();
-  if(e.key==='n'&&e.ctrlKey){e.preventDefault();toggleNotif();}
-  if(e.key==='c'&&e.ctrlKey){e.preventDefault();toggleControl();}
-});
-
-// App functions
-function toggleSwitch(el){
-  el.classList.toggle('active');
-}
-
-function showToast(message){
-  const toast=document.getElementById('toast');
-  toast.textContent=message;
-  toast.classList.add('show');
-  setTimeout(()=>{
-    toast.classList.remove('show');
-  },2000);
-}
-
-function toggleFlashlight(el){
-  el.classList.toggle('active');
-  if(el.classList.contains('active')){
-    document.body.style.filter='brightness(1.2)';
-    setTimeout(()=>document.body.style.filter='',100);
-  }
-}
-
-function adjustBrightness(e,track){
-  const rect=track.getBoundingClientRect();
-  const percent=(e.clientX-rect.left)/rect.width;
-  document.getElementById('brightness-bar').style.width=(percent*100)+'%';
-}
-
-function shutterEffect(el){
-  el.style.transform='scale(0.9)';
-  el.querySelector('::after')&&(el.querySelector('::after').style.transform='scale(0.6)');
-  setTimeout(()=>{
-    el.style.transform='scale(1)';
-  },150);
-  showToast('📸 Foto capturada');
-}
-
-function enlargePhoto(el){
-  if(el.classList.contains('enlarged')){
-    el.classList.remove('enlarged');
-  }else{
-    document.querySelectorAll('.gallery-item.enlarged').forEach(item=>item.classList.remove('enlarged'));
-    el.classList.add('enlarged');
-  }
-}
-
-function togglePlay(btn){
-  const isPlaying=btn.textContent==='⏸';
-  btn.textContent=isPlaying?'▶':'⏸';
-  btn.style.background=isPlaying?'#007AFF':'#ff2d55';
-}
-
-function seekMusic(e,track){
-  const rect=track.getBoundingClientRect();
-  const percent=(e.clientX-rect.left)/rect.width;
-  document.getElementById('music-progress').style.width=(percent*100)+'%';
-  track.querySelector('.progress-knob').style.left=(percent*100)+'%';
-}
-
-// Calculator
-let calcValue='0';
-let calcOperator='';
-let calcPrevious='';
-
-function calcInput(val){
-  const display=document.getElementById('calc-display');
-  if(val==='AC'){
-    calcValue='0';
-    calcOperator='';
-    calcPrevious='';
-    display.textContent='0';
-  }else if(val==='+/-'){
-    calcValue=String(parseFloat(calcValue)*-1);
-    display.textContent=calcValue;
-  }else if(val==='%'){
-    calcValue=String(parseFloat(calcValue)/100);
-    display.textContent=calcValue;
-  }else if(['+','-','*','/'].includes(val)){
-    calcOperator=val;
-    calcPrevious=calcValue;
-    calcValue='0';
-  }else if(val==='='){
-    if(calcOperator&&calcPrevious){
-      const prev=parseFloat(calcPrevious);
-      const current=parseFloat(calcValue);
-      let result=0;
-      switch(calcOperator){
-        case '+':result=prev+current;break;
-        case '-':result=prev-current;break;
-        case '*':result=prev*current;break;
-        case '/':result=prev/current;break;
-      }
-      calcValue=String(result).length>10?String(result).slice(0,10):String(result);
-      display.textContent=calcValue;
-      calcOperator='';
-      calcPrevious='';
+    defaultConfig {
+        applicationId = "com.coloros.launcher"
+        minSdk = 26
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0.0-ColorOS-Edition"
     }
-  }else{
-    if(calcValue==='0')calcValue='';
-    if(calcValue.length<10){
-      calcValue+=val;
-      display.textContent=calcValue;
+
+    buildFeatures {
+        compose = true
     }
-  }
-}
 
-// Phone
-let dialValue='';
-function dialNumber(num){
-  if(dialValue.length<15){
-    dialValue+=num;
-    document.getElementById('phone-display').textContent=dialValue;
-  }
-}
-
-function clearDial(){
-  dialValue=dialValue.slice(0,-1);
-  document.getElementById('phone-display').textContent=dialValue||'';
-}
-
-function makeCall(){
-  if(dialValue){
-    showToast(`Llamando a ${dialValue}...`);
-    setTimeout(()=>showToast('📞 Llamada finalizada'),3000);
-  }else{
-    showToast('Ingresa un número');
-  }
-}
-
-// Initialize
-updateClock();
-</script>
-<script>
-let currentMode='mobile';
-let startY=0;
-let startX=0;
-let isSwiping=false;
-let touchStartTime=0;
-let appDragStartY=0;
-let appDragCurrentWindow=null;
-let isAppDragging=false;
-
-function selectDevice(mode){
-  currentMode=mode;
-  document.body.className=mode+'-mode';
-  document.getElementById('device-selector').classList.add('hidden');
-  document.getElementById('os-container').classList.add('active');
-  if(mode==='desktop')document.getElementById('unlock-hint').textContent='Haz clic para desbloquear';
-  setTimeout(updateClock,100);
-}
-
-function updateClock(){
-  const now=new Date();
-  const h=now.getHours().toString().padStart(2,'0');
-  const m=now.getMinutes().toString().padStart(2,'0');
-  const timeStr=h+':'+m;
-  document.getElementById('time').textContent=timeStr;
-  document.getElementById('statusTime').textContent=timeStr;
-  const dias=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-  const meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  const diaSemana=dias[now.getDay()];
-  const dia=now.getDate();
-  const mes=meses[now.getMonth()];
-  document.getElementById('date').textContent=`${diaSemana}, ${dia} de ${mes}`;
-  setTimeout(updateClock,1000);
-}
-
-function unlock(){
-  document.getElementById('lockscreen').classList.add('unlocked');
-  document.getElementById('home').classList.add('active');
-}
-
-// ABRIR APP CON ANIMACIÓN DESDE ABAJO
-function openApp(name){
-  const app=document.getElementById(name);
-  if(!app)return;
-  document.querySelectorAll('.window.open').forEach(w=>{
-    if(w!==app){
-      w.classList.remove('open');
-      w.style.transform='';
-      w.style.opacity='';
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.5"
     }
-  });
-  document.getElementById('notif').classList.remove('show');
-  document.getElementById('control').classList.remove('show');
-  app.classList.add('open');
-  app.style.transition='none';
-  app.style.transform='translateY(100%) scale(0.9)';
-  app.style.opacity='0.8';
-  requestAnimationFrame(()=>{
-    app.style.transition='all 0.5s cubic-bezier(0.32, 0.72, 0, 1)';
-    app.style.transform='translateY(0) scale(1)';
-    app.style.opacity='1';
-  });
-}
 
-// CERRAR APP CON ANIMACIÓN HACIA ABAJO
-function closeApp(){
-  const openWindow=document.querySelector('.window.open');
-  if(!openWindow)return;
-  openWindow.style.transition='all 0.4s cubic-bezier(0.32, 0.72, 0, 1)';
-  openWindow.style.transform='translateY(100%) scale(0.9)';
-  openWindow.style.opacity='0';
-  setTimeout(()=>{
-    openWindow.classList.remove('open');
-    openWindow.style.transform='';
-    openWindow.style.opacity='';
-    openWindow.style.transition='';
-  },400);
-}
-
-function goHome(){
-  closeApp();
-}
-
-function toggleNotif(){
-  document.getElementById('notif').classList.toggle('show');
-  document.getElementById('control').classList.remove('show');
-}
-
-function toggleControl(){
-  document.getElementById('control').classList.toggle('show');
-  document.getElementById('notif').classList.remove('show');
-}
-
-// SISTEMA DE GESTOS TOUCH
-document.addEventListener('touchstart',e=>{
-  const touch=e.touches[0];
-  startY=touch.clientY;
-  startX=touch.clientX;
-  isSwiping=true;
-  touchStartTime=Date.now();
-  isAppDragging=false;
-  const target=e.target;
-  const windowEl=target.closest('.window.open');
-  const gestureIndicator=target.closest('.app-gesture-indicator');
-  if((gestureIndicator|| (windowEl&&startY>window.innerHeight-100))&&windowEl){
-    appDragStartY=startY;
-    appDragCurrentWindow=windowEl;
-    isAppDragging=true;
-    windowEl.style.transition='none';
-    return;
-  }
-},{passive:false});
-
-document.addEventListener('touchmove',e=>{
-  if(!isSwiping)return;
-  const touch=e.touches[0];
-  const currentY=touch.clientY;
-  const diffY=currentY-startY;
-  if(isAppDragging&&appDragCurrentWindow){
-    if(diffY>0){
-      e.preventDefault();
-      const progress=Math.min(diffY/300,1);
-      appDragCurrentWindow.style.transform=`translateY(${diffY*0.8}px) scale(${1-progress*0.1})`;
-      appDragCurrentWindow.style.opacity=1-progress*0.5;
+    kotlinOptions {
+        jvmTarget = "1.8"
     }
-    return;
-  }
-  const notifOpen=document.getElementById('notif').classList.contains('show');
-  const controlOpen=document.getElementById('control').classList.contains('show');
-  if((notifOpen||controlOpen)&&startY<300&&diffY<-30){
-    const el=notifOpen?document.getElementById('notif'):document.getElementById('control');
-    el.style.transition='none';
-    el.style.transform=`translateY(${diffY}px)`;
-  }
-},{passive:false});
+}
 
-document.addEventListener('touchend',e=>{
-  if(!isSwiping)return;
-  isSwiping=false;
-  const touch=e.changedTouches[0];
-  const endY=touch.clientY;
-  const diffY=endY-startY;
-  const touchDuration=Date.now()-touchStartTime;
-  const openWindow=document.querySelector('.window.open');
-  const notifOpen=document.getElementById('notif').classList.contains('show');
-  const controlOpen=document.getElementById('control').classList.contains('show');
-  if(isAppDragging&&appDragCurrentWindow){
-    const dragDistance=endY-appDragStartY;
-    appDragCurrentWindow.style.transition='all 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
-    if(dragDistance>100){
-      appDragCurrentWindow.style.transform='translateY(100%) scale(0.9)';
-      appDragCurrentWindow.style.opacity='0';
-      setTimeout(()=>{
-        appDragCurrentWindow.classList.remove('open');
-        appDragCurrentWindow.style.transform='';
-        appDragCurrentWindow.style.opacity='';
-        appDragCurrentWindow.style.transition='';
-      },300);
-    }else{
-      appDragCurrentWindow.style.transform='translateY(0) scale(1)';
-      appDragCurrentWindow.style.opacity='1';
-      setTimeout(()=>{appDragCurrentWindow.style.transition='';},300);
+dependencies {
+    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+    implementation("androidx.activity:activity-compose:1.8.2")
+    
+    // Compose BOM
+    implementation(platform("androidx.compose:compose-bom:2024.02.00"))
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.ui:ui-graphics")
+    implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("androidx.compose.material3:material3")
+    
+    // Animation
+    implementation("androidx.compose.animation:animation:1.6.1")
+    implementation("androidx.compose.animation:animation-graphics:1.6.1")
+    
+    // Biometric (Fingerprint)
+    implementation("androidx.biometric:biometric:1.1.0")
+    
+    // ViewModel
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+    
+    // Navigation
+    implementation("androidx.navigation:navigation-compose:2.7.7")
+    
+    // Icons Extended
+    implementation("androidx.compose.material:material-icons-extended:1.6.1")
+    
+    // Accompanist (System UI)
+    implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
+    
+    // Blur/Graphics
+    implementation("com.github.skydoves:cloudy:0.1.2")
+}
+// app/src/main/java/com/coloros/launcher/MainActivity.kt
+package com.coloros.launcher
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Modifier
+import androidx.core.view.WindowCompat
+import com.coloros.launcher.ui.screens.LauncherNavigation
+import com.coloros.launcher.ui.theme.ColorOSLauncherTheme
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        
+        // Full screen mode
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        enableEdgeToEdge()
+        
+        setContent {
+            ColorOSLauncherTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    LauncherNavigation()
+                }
+            }
+        }
     }
-    isAppDragging=false;
-    appDragCurrentWindow=null;
-    return;
-  }
-  document.getElementById('notif').style.transition='';
-  document.getElementById('control').style.transition='';
-  if(controlOpen&&startY<300&&diffY<-80){
-    document.getElementById('control').style.transform='';
-    toggleControl();
-    return;
-  }
-  if(notifOpen&&startY<300&&diffY<-80){
-    document.getElementById('notif').style.transform='';
-    toggleNotif();
-    return;
-  }
-  if(startY>window.innerHeight-60&&touchDuration<200&&Math.abs(diffY)<10&&openWindow){
-    goHome();
-    return;
-  }
-  if(startY<50&&diffY>80&&!controlOpen){
-    toggleNotif();
-    return;
-  }
-  if(startY<50&&diffY>80&&!notifOpen){
-    toggleControl();
-    return;
-  }
-  if(openWindow&&!isAppDragging){
-    openWindow.style.transition='all 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
-    openWindow.style.transform='translateY(0) scale(1)';
-    openWindow.style.opacity='1';
-    setTimeout(()=>{openWindow.style.transition='';},300);
-  }
-  document.getElementById('notif').style.transform='';
-  document.getElementById('control').style.transform='';
-},{passive:true});
+}// app/src/main/java/com/coloros/launcher/ui/theme/Theme.kt
+package com.coloros.launcher.ui.theme
 
-// SOPORTE MOUSE
-let mouseDown=false;
-let mouseStartY=0;
-let mouseWindow=null;
+import android.app.Activity
+import android.os.Build
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
-document.addEventListener('mousedown',e=>{
-  const windowEl=e.target.closest('.window.open');
-  const gestureIndicator=e.target.closest('.app-gesture-indicator');
-  if((gestureIndicator||(windowEl&&e.clientY>window.innerHeight-100))&&windowEl){
-    mouseDown=true;
-    mouseStartY=e.clientY;
-    mouseWindow=windowEl;
-    windowEl.style.transition='none';
-  }
-});
+// Paleta de colores ColorOS 14
+private val ColorOSLight = lightColorScheme(
+    primary = Green40,
+    onPrimary = White,
+    primaryContainer = Green90,
+    onPrimaryContainer = Green10,
+    secondary = Blue40,
+    onSecondary = White,
+    secondaryContainer = Blue90,
+    onSecondaryContainer = Blue10,
+    tertiary = Orange40,
+    onTertiary = White,
+    tertiaryContainer = Orange90,
+    onTertiaryContainer = Orange10,
+    error = Red40,
+    background = Gray99,
+    onBackground = Gray10,
+    surface = Gray99,
+    onSurface = Gray10,
+    surfaceVariant = Gray90,
+    onSurfaceVariant = Gray30,
+    outline = Gray50
+)
 
-document.addEventListener('mousemove',e=>{
-  if(!mouseDown||!mouseWindow)return;
-  const diffY=e.clientY-mouseStartY;
-  if(diffY>0){
-    const progress=Math.min(diffY/300,1);
-    mouseWindow.style.transform=`translateY(${diffY*0.8}px) scale(${1-progress*0.1})`;
-    mouseWindow.style.opacity=1-progress*0.5;
-  }
-});
+private val ColorOSDark = darkColorScheme(
+    primary = Green80,
+    onPrimary = Green20,
+    primaryContainer = Green30,
+    onPrimaryContainer = Green90,
+    secondary = Blue80,
+    onSecondary = Blue20,
+    secondaryContainer = Blue30,
+    onSecondaryContainer = Blue90,
+    tertiary = Orange80,
+    onTertiary = Orange20,
+    tertiaryContainer = Orange30,
+    onTertiaryContainer = Orange90,
+    error = Red80,
+    background = Gray10,
+    onBackground = Gray90,
+    surface = Gray10,
+    onSurface = Gray90,
+    surfaceVariant = Gray30,
+    onSurfaceVariant = Gray80,
+    outline = Gray60
+)
 
-document.addEventListener('mouseup',e=>{
-  if(!mouseDown)return;
-  mouseDown=false;
-  if(mouseWindow){
-    const diffY=e.clientY-mouseStartY;
-    mouseWindow.style.transition='all 0.3s cubic-bezier(0.32, 0.72, 0, 1)';
-    if(diffY>100){
-      mouseWindow.style.transform='translateY(100%) scale(0.9)';
-      mouseWindow.style.opacity='0';
-      setTimeout(()=>{
-        mouseWindow.classList.remove('open');
-        mouseWindow.style.transform='';
-        mouseWindow.style.opacity='';
-        mouseWindow.style.transition='';
-      },300);
-    }else{
-      mouseWindow.style.transform='translateY(0) scale(1)';
-      mouseWindow.style.opacity='1';
-      setTimeout(()=>{mouseWindow.style.transition='';},300);
+@Composable
+fun ColorOSLauncherTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = false, // ColorOS usa sus propios colores, no dynamic
+    content: @Composable () -> Unit
+) {
+    val colorScheme = when {
+        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            val context = LocalContext.current
+            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        }
+        darkTheme -> ColorOSDark
+        else -> ColorOSLight
     }
-    mouseWindow=null;
-  }
-});
-
-document.addEventListener('keydown',e=>{
-  if(e.key==='Escape')closeApp();
-  if(e.key==='n'&&e.ctrlKey){e.preventDefault();toggleNotif();}
-  if(e.key==='c'&&e.ctrlKey){e.preventDefault();toggleControl();}
-});
-
-function toggleSwitch(el){
-  el.classList.toggle('active');
-}
-
-function showToast(message){
-  const toast=document.getElementById('toast');
-  toast.innerHTML=message.replace(/\n/g,'<br>');
-  toast.classList.add('show');
-  setTimeout(()=>{toast.classList.remove('show');},2000);
-}
-
-function toggleFlashlight(el){
-  el.classList.toggle('active');
-  if(el.classList.contains('active')){
-    document.body.style.filter='brightness(1.2)';
-    setTimeout(()=>document.body.style.filter='',100);
-  }
-}
-
-function adjustBrightness(e,track){
-  const rect=track.getBoundingClientRect();
-  const percent=(e.clientX-rect.left)/rect.width;
-  document.getElementById('brightness-bar').style.width=(percent*100)+'%';
-}
-
-function shutterEffect(el){
-  el.style.transform='scale(0.9)';
-  setTimeout(()=>{el.style.transform='scale(1)';},150);
-  showToast('📸 Foto capturada');
-}
-
-function enlargePhoto(el){
-  if(el.classList.contains('enlarged')){
-    el.classList.remove('enlarged');
-  }else{
-    document.querySelectorAll('.gallery-item.enlarged').forEach(item=>item.classList.remove('enlarged'));
-    el.classList.add('enlarged');
-  }
-}
-
-function togglePlay(btn){
-  const isPlaying=btn.textContent==='⏸';
-  btn.textContent=isPlaying?'▶':'⏸';
-  btn.style.background=isPlaying?'#007AFF':'#ff2d55';
-}
-
-function seekMusic(e,track){
-  const rect=track.getBoundingClientRect();
-  const percent=(e.clientX-rect.left)/rect.width;
-  document.getElementById('music-progress').style.width=(percent*100)+'%';
-  track.querySelector('.progress-knob').style.left=(percent*100)+'%';
-}
-
-let calcValue='0';
-let calcOperator='';
-let calcPrevious='';
-
-function calcInput(val){
-  const display=document.getElementById('calc-display');
-  if(val==='AC'){
-    calcValue='0';
-    calcOperator='';
-    calcPrevious='';
-    display.textContent='0';
-  }else if(val==='+/-'){
-    calcValue=String(parseFloat(calcValue)*-1);
-    display.textContent=calcValue;
-  }else if(val==='%'){
-    calcValue=String(parseFloat(calcValue)/100);
-    display.textContent=calcValue;
-  }else if(['+','-','*','/'].includes(val)){
-    calcOperator=val;
-    calcPrevious=calcValue;
-    calcValue='0';
-  }else if(val==='='){
-    if(calcOperator&&calcPrevious){
-      const prev=parseFloat(calcPrevious);
-      const current=parseFloat(calcValue);
-      let result=0;
-      switch(calcOperator){
-        case '+':result=prev+current;break;
-        case '-':result=prev-current;break;
-        case '*':result=prev*current;break;
-        case '/':result=prev/current;break;
-      }
-      calcValue=String(result).length>10?String(result).slice(0,10):String(result);
-      display.textContent=calcValue;
-      calcOperator='';
-      calcPrevious='';
+    
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            window.statusBarColor = colorScheme.background.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+        }
     }
-  }else{
-    if(calcValue==='0')calcValue='';
-    if(calcValue.length<10){
-      calcValue+=val;
-      display.textContent=calcValue;
+
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = ColorOSTypography,
+        content = content
+    )
+}
+// app/src/main/java/com/coloros/launcher/ui/theme/Color.kt
+package com.coloros.launcher.ui.theme
+
+import androidx.compose.ui.graphics.Color
+
+// ColorOS 14 Official Palette
+val Green40 = Color(0xFF00B578) // ColorOS Green
+val Green80 = Color(0xFF5DDFA6)
+val Green90 = Color(0xFFB8F5D9)
+val Green10 = Color(0xFF002110)
+val Green20 = Color(0xFF003920)
+val Green30 = Color(0xFF005230)
+
+val Blue40 = Color(0xFF2196F3)
+val Blue80 = Color(0xFF9CCAFF)
+val Blue90 = Color(0xFFD1E4FF)
+val Blue10 = Color(0xFF001D36)
+val Blue20 = Color(0xFF003258)
+val Blue30 = Color(0xFF00497D)
+
+val Orange40 = Color(0xFFFF9800)
+val Orange80 = Color(0xFFFFB95C)
+val Orange90 = Color(0xFFFFDDB0)
+val Orange10 = Color(0xFF2A1800)
+val Orange20 = Color(0xFF462B00)
+val Orange30 = Color(0xFF643F00)
+
+val Red40 = Color(0xFFBA1A1A)
+val Red80 = Color(0xFFFFB4AB)
+
+val Gray10 = Color(0xFF191C1A)
+val Gray30 = Color(0xFF414944)
+val Gray50 = Color(0xFF717974)
+val Gray60 = Color(0xFF8B938E)
+val Gray80 = Color(0xFFC1C9BF)
+val Gray90 = Color(0xFFE0E3DF)
+val Gray99 = Color(0xFFF5FBF6)
+
+val White = Color(0xFFFFFFFF)
+
+// Liquid Glass Colors
+val LiquidGlassLight = Color(0xCCFFFFFF)
+val LiquidGlassDark = Color(0xCC1C1C1E)
+val LiquidGlassBorderLight = Color(0x40FFFFFF)
+val LiquidGlassBorderDark = Color(0x40FFFFFF)
+// app/src/main/java/com/coloros/launcher/ui/theme/Type.kt
+package com.coloros.launcher.ui.theme
+
+import androidx.compose.material3.Typography
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+
+val ColorOSTypography = Typography(
+    displayLarge = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Light,
+        fontSize = 57.sp,
+        lineHeight = 64.sp,
+        letterSpacing = (-0.25).sp
+    ),
+    displayMedium = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Light,
+        fontSize = 45.sp,
+        lineHeight = 52.sp,
+        letterSpacing = 0.sp
+    ),
+    headlineLarge = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 32.sp,
+        lineHeight = 40.sp,
+        letterSpacing = 0.sp
+    ),
+    titleLarge = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Medium,
+        fontSize = 22.sp,
+        lineHeight = 28.sp,
+        letterSpacing = 0.sp
+    ),
+    bodyLarge = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight = FontWeight.Normal,
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.5.sp
+    ),
+    labelLarge = TextStyle(
+        fontFamily = FontFamily.Default,
+        fontWeight.FontWeight.Medium,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+        letterSpacing = 0.1.sp
+    )
+)
+// app/src/main/java/com/coloros/launcher/ui/components/LiquidGlassCard.kt
+package com.coloros.launcher.ui.components
+
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.unit.dp
+import com.coloros.launcher.ui.theme.LiquidGlassDark
+import com.coloros.launcher.ui.theme.LiquidGlassLight
+import com.coloros.launcher.ui.theme.LiquidGlassBorderDark
+import com.coloros.launcher.ui.theme.LiquidGlassBorderLight
+
+@Composable
+fun LiquidGlassCard(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "liquid")
+    
+    // Animación de brillo líquido
+    val shimmerTranslate by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(3000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "shimmer"
+    )
+    
+    val isDark = !MaterialTheme.colorScheme.background.luminance().let { it > 0.5 }
+    
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .border(
+                width = 1.dp,
+                color = if (isDark) LiquidGlassBorderDark else LiquidGlassBorderLight,
+                shape = RoundedCornerShape(24.dp)
+            )
+            .drawBehind {
+                // Efecto de gradiente líquido animado
+                drawRect(
+                    brush = Brush.linearGradient(
+                        colors = listOf(
+                            if (isDark) LiquidGlassDark.copy(alpha = 0.6f) 
+                            else LiquidGlassLight.copy(alpha = 0.6f),
+                            if (isDark) LiquidGlassDark.copy(alpha = 0.3f)
+                            else LiquidGlassLight.copy(alpha = 0.3f),
+                            if (isDark) LiquidGlassDark.copy(alpha = 0.6f)
+                            else LiquidGlassLight.copy(alpha = 0.6f)
+                        ),
+                        start = Offset(shimmerTranslate - 500f, 0f),
+                        end = Offset(shimmerTranslate + 500f, size.height),
+                        tileMode = TileMode.Clamp
+                    )
+                )
+            },
+        colors = CardDefaults.cardColors(
+            containerColor = if (isDark) 
+                LiquidGlassDark.copy(alpha = 0.4f)
+            else 
+                LiquidGlassLight.copy(alpha = 0.4f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            content()
+        }
     }
-  }
 }
 
-let dialValue='';
-function dialNumber(num){
-  if(dialValue.length<15){
-    dialValue+=num;
-    document.getElementById('phone-display').textContent=dialValue;
-  }
+// Extensión para calcular luminancia
+private fun Color.luminance(): Float {
+    val r = red * 0.299f
+    val g = green * 0.587f
+    val b = blue * 0.114f
+    return r + g + b
+}
+// app/src/main/java/com/coloros/launcher/ui/components/FingerprintButton.kt
+package com.coloros.launcher.ui.components
+
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
+
+@Composable
+fun FingerprintButton(
+    onAuthenticated: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var isScanning by remember { mutableStateOf(false) }
+    var isSuccess by remember { mutableStateOf(false) }
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    
+    // Animaciones
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.95f else if (isScanning) 1.1f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "scale"
+    )
+    
+    val pulseAnim = rememberInfiniteTransition(label = "pulse")
+    val pulseScale by pulseAnim.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "pulse"
+    )
+    
+    val pulseAlpha by pulseAnim.animateFloat(
+        initialValue = 0.6f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "pulseAlpha"
+    )
+    
+    LaunchedEffect(isScanning) {
+        if (isScanning) {
+            delay(1500) // Simula escaneo
+            isSuccess = true
+            delay(300)
+            onAuthenticated()
+        }
+    }
+    
+    Box(
+        modifier = modifier.size(120.dp),
+        contentAlignment = Alignment.Center
+    ) {
+// app/src/main/java/com/coloros/launcher/ui/components/DraggableGrid.kt
+package com.coloros.launcher.ui.components
+
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
+import com.coloros.launcher.data.model.AppInfo
+import kotlin.math.roundToInt
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun DraggableAppGrid(
+    apps: List<AppInfo>,
+    onMove: (Int, Int) -> Unit,
+    onAppClick: (AppInfo) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var draggedItem by remember { mutableStateOf<AppInfo?>(null) }
+    var draggedOffset by remember { mutableStateOf(Offset.Zero) }
+    var draggedIndex by remember { mutableStateOf(-1) }
+    
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(4),
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        items(apps, key = { it.packageName }) { app ->
+            val isDragged = draggedItem == app
+            val scale by animateFloatAsState(
+                targetValue = if (isDragged) 1.15f else 1f,
+                label = "scale"
+            )
+            val elevation by animateDpAsState(
+                targetValue = if (isDragged) 16.dp else 0.dp,
+                label = "elevation"
+            )
+            
+            Box(
+                modifier = Modifier
+                    .aspectRatio(0.8f)
+                    .zIndex(if (isDragged) 1f else 0f)
+                    .scale(scale)
+                    .offset { 
+                        if (isDragged) {
+                            IntOffset(
+                                draggedOffset.x.roundToInt(),
+                                draggedOffset.y.roundToInt()
+                            )
+                        } else {
+                            IntOffset(0, 0)
+                        }
+                    }
+                    .shadow(elevation, RoundedCornerShape(16.dp))
+                    .background(
+                        if (isDragged) 
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f)
+                        else 
+                            Color.Transparent,
+                        RoundedCornerShape(16.dp)
+                    )
+                    .pointerInput(app) {
+                        detectDragGesturesAfterLongPress(
+                            onDragStart = {
+                                draggedItem = app
+                                draggedIndex = apps.indexOf(app)
+                            },
+                            onDrag = { change, dragAmount ->
+                                change.consume()
+                                draggedOffset += dragAmount
+                            },
+                            onDragEnd = {
+                                // Calcular nueva posición
+                                val itemWidth = size.width.toFloat()
+                                val itemHeight = size.height.toFloat()
+                                val column = (draggedOffset.x / itemWidth).roundToInt()
+                                val row = (draggedOffset.y / itemHeight).roundToInt()
+                                val newIndex = draggedIndex + column + (row * 4)
+                                
+                                if (newIndex in apps.indices && newIndex != draggedIndex) {
+                                    onMove(draggedIndex, newIndex)
+                                }
+                                
+                                draggedItem = null
+                                draggedOffset = Offset.Zero
+                                draggedIndex = -1
+                            }
+                        )
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                AppIconItem(
+                    app = app,
+                    onClick = { if (!isDragged) onAppClick(app) }
+                )
+            }
+        }
+    }
 }
 
-function clearDial(){
-  dialValue=dialValue.slice(0,-1);
-  document.getElementById('phone-display').textContent=dialValue||'';
+@Composable
+private fun AppIconItem(
+    app: AppInfo,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxSize()
+            .clickable { onClick() }
+            .padding(4.dp)
+    ) {
+        // Icono con efecto Liquid Glass
+        LiquidGlassCard(
+            modifier = Modifier
+                .size(56.dp)
+                .weight(1f)
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = app.icon,
+                    contentDescription = app.name,
+                    modifier = Modifier.size(32.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(4.dp))
+        
+        Text(
+            text = app.name,
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+      // app/src/main/java/com/coloros/launcher/data/model/AppInfo.kt
+package com.coloros.launcher.data.model
+
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.ui.graphics.vector.ImageVector
+
+data class AppInfo(
+    val name: String,
+    val packageName: String,
+    val icon: ImageVector,
+    val isSystemApp: Boolean = false
+)
+
+// Datos de ejemplo estilo ColorOS
+val sampleApps = listOf(
+    AppInfo("Teléfono", "com.android.dialer", Icons.Default.Phone),
+    AppInfo("Mensajes", "com.android.messages", Icons.Default.Message),
+    AppInfo("Cámara", "com.android.camera", Icons.Default.Camera),
+    AppInfo("Fotos", "com.android.gallery", Icons.Default.Photo),
+    AppInfo("Configuración", "com.android.settings", Icons.Default.Settings),
+    AppInfo("Calculadora", "com.android.calculator", Icons.Default.Calculate),
+    AppInfo("Calendario", "com.android.calendar", Icons.Default.CalendarToday),
+    AppInfo("Reloj", "com.android.clock", Icons.Default.AccessTime),
+    AppInfo("Música", "com.android.music", Icons.Default.MusicNote),
+    AppInfo("Archivos", "com.android.files", Icons.Default.Folder),
+    AppInfo("Clima", "com.android.weather", Icons.Default.WbSunny),
+    AppInfo("Maps", "com.android.maps", Icons.Default.Map),
+    AppInfo("Correo", "com.android.email", Icons.Default.Email),
+    AppInfo("Navegador", "com.android.browser", Icons.Default.Language),
+    AppInfo("Contactos", "com.android.contacts", Icons.Default.Contacts),
+    AppInfo("Notas", "com.android.notes", Icons.Default.Note)
+)// app/src/main/java/com/coloros/launcher/ui/screens/HomeScreen.kt
+package com.coloros.launcher.ui.screens
+
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.coloros.launcher.data.model.sampleApps
+import com.coloros.launcher.ui.components.DraggableAppGrid
+import com.coloros.launcher.ui.components.LiquidGlassCard
+import com.coloros.launcher.viewmodel.LauncherViewModel
+import java.text.SimpleDateFormat
+import java.util.*
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HomeScreen(
+    onOpenDrawer: () -> Unit,
+    viewModel: LauncherViewModel = viewModel()
+) {
+    val apps by viewModel.apps.collectAsState()
+    val currentTime = remember { mutableStateOf(System.currentTimeMillis()) }
+    
+    // Actualizar hora cada minuto
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(60000)
+            currentTime.value = System.currentTimeMillis()
+        }
+    }
+    
+    val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+    val dateFormat = SimpleDateFormat("EEEE, d MMMM", Locale.getDefault())
+    
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        containerColor = androidx.compose.ui.graphics.Color.Transparent,
+        topBar = {
+            // Barra superior con hora y fecha
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 48.dp, start = 24.dp, end = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = timeFormat.format(Date(currentTime.value)),
+                    style = MaterialTheme.typography.displayLarge.copy(
+                        fontSize = 72.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Light
+                    ),
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Text(
+                    text = dateFormat.format(Date(currentTime.value)),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                )
+            }
+        },
+        bottomBar = {
+            // Dock inferior con efecto Liquid Glass
+            LiquidGlassCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 24.dp)
+                    .height(80.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Botón de búsqueda
+                    ActionButton(
+                        icon = Icons.Default.Search,
+                        onClick = { /* Abrir búsqueda */ }
+                    )
+                    
+                    // Botón de cajón de apps
+                    ActionButton(
+                        icon = Icons.Default.Apps,
+                        onClick = onOpenDrawer,
+                        isPrimary = true
+                    )
+                    
+                    // Botón de agregar
+                    ActionButton(
+                        icon = Icons.Default.Add,
+                        onClick = { /* Agregar widget/app */ }
+                    )
+                }
+            }
+        }
+    ) { padding ->
+        // Grid de apps arrastrables
+        DraggableAppGrid(
+            apps = apps,
+            onMove = { from, to -> viewModel.moveApp(from, to) },
+            onAppClick = { app -> 
+                // Abrir app con animación
+            },
+            modifier = Modifier.padding(padding)
+        )
+    }
 }
 
-function makeCall(){
-  if(dialValue){
-    showToast(`Llamando a ${dialValue}...`);
-    setTimeout(()=>showToast('📞 Llamada finalizada'),3000);
-  }else{
-    showToast('Ingresa un número');
-  }
+@Composable
+private fun ActionButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit,
+    isPrimary: Boolean = false
+) {
+    val scale by animateFloatAsState(
+        targetValue = if (isPrimary) 1.2f else 1f,
+        label = "actionScale"
+    )
+    
+    FilledIconButton(
+        onClick = onClick,
+        modifier = Modifier
+            .size(if (isPrimary) 64.dp else 48.dp)
+            .scale(scale),
+        colors = IconButtonDefaults.filledIconButtonColors(
+            containerColor = if (isPrimary) 
+                MaterialTheme.colorScheme.primary 
+            else 
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        )
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(if (isPrimary) 32.dp else 24.dp)
+        )
+    }
+}
+      // app/src/main/java/com/coloros/launcher/viewmodel/LauncherViewModel.kt
+package com.coloros.launcher.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.coloros.launcher.data.model.AppInfo
+import com.coloros.launcher.data.model.sampleApps
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+
+class LauncherViewModel : ViewModel() {
+    private val _apps = MutableStateFlow(sampleApps.toMutableList())
+    val apps: StateFlow<List<AppInfo>> = _apps
+    
+    private val _isLocked = MutableStateFlow(true)
+    val isLocked: StateFlow<Boolean> = _isLocked
+    
+    private val _isFullScreen = MutableStateFlow(false)
+    val isFullScreen: StateFlow<Boolean> = _isFullScreen
+    
+    fun moveApp(fromIndex: Int, toIndex: Int) {
+        viewModelScope.launch {
+            val currentList = _apps.value.toMutableList()
+            if (fromIndex in currentList.indices && toIndex in currentList.indices) {
+                val item = currentList.removeAt(fromIndex)
+                currentList.add(toIndex, item)
+                _apps.value = currentList
+            }
+        }
+    }
+    
+    fun unlock() {
+        _isLocked.value = false
+    }
+    
+    fun lock() {
+        _isLocked.value = true
+    }
+    
+    fun toggleFullScreen() {
+        _isFullScreen.value = !_isFullScreen.value
+    }
+    
+    fun addApp(app: AppInfo) {
+        viewModelScope.launch {
+            val currentList = _apps.value.toMutableList()
+            currentList.add(app)
+            _apps.value = currentList
+        }
+    }
+    
+    fun removeApp(packageName: String) {
+        viewModelScope.launch {
+            _apps.value = _apps.value.filter { it.packageName != packageName }
+        }
+    }
+}
+      // app/src/main/java/com/coloros/launcher/ui/screens/LockScreen.kt
+package com.coloros.launcher.ui.screens
+
+import androidx.compose.animation.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.coloros.launcher.ui.components.FingerprintButton
+import com.coloros.launcher.ui.components.LiquidGlassCard
+import java.text.SimpleDateFormat
+import java.util.*
+
+@Composable
+fun LockScreen(
+    onUnlock: () -> Unit
+) {
+    val currentTime = remember { mutableStateOf(System.currentTimeMillis()) }
+    
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(1000)
+            currentTime.value = System.currentTimeMillis()
+        }
+    }
+    
+    val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+    val dateFormat = SimpleDateFormat("EEEE, d MMMM", Locale.getDefault())
+    
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background.copy(alpha = 0.95f))
+            .padding(32.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(48.dp)
+        ) {
+            // Hora grande
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = timeFormat.format(Date(currentTime.value)),
+                    style = MaterialTheme.typography.displayLarge.copy(fontSize = 96.sp),
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Text(
+                    text = dateFormat.format(Date(currentTime.value)),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                )
+            }
+            
+            // Notificaciones simuladas con Liquid Glass
+            LiquidGlassCard(modifier = Modifier.fillMaxWidth()) {
+                Column {
+                    Text(
+                        "Notificaciones",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    Text(
+                        "Sin notificaciones nuevas",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.weight(1f))
+            
+            // Botón de huella con animación
+            Text(
+                "Toca para desbloquear",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                textAlign = TextAlign.Center
+            )
+            
+            FingerprintButton(
+                onAuthenticated = onUnlock,
+                modifier = Modifier.size(100.dp)
+            )
+        }
+    }
+}
+      // app/src/main/java/com/coloros/launcher/ui/screens/LauncherNavigation.kt
+package com.coloros.launcher.ui.screens
+
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.coloros.launcher.viewmodel.LauncherViewModel
+
+sealed class Screen(val route: String) {
+    object Lock : Screen("lock")
+    object Home : Screen("home")
+    object Drawer : Screen("drawer")
+    object Settings : Screen("settings")
 }
 
-updateClock();
-</script>
+@Composable
+fun LauncherNavigation(
+    navController: NavHostController = rememberNavController(),
+    viewModel: LauncherViewModel = viewModel()
+) {
+    val isLocked by viewModel.isLocked.collectAsState()
+    
+    NavHost(
+        navController = navController,
+        startDestination = if (isLocked) Screen.Lock.route else Screen.Home.route
+    ) {
+        composable(
+            route = Screen.Lock.route,
+            enter = { fadeIn(animationSpec = tween(300)) },
+            exit = { fadeOut(animationSpec = tween(300)) }
+        ) {
+            LockScreen(
+                onUnlock = {
+                    viewModel.unlock()
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Lock.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+        
+        composable(
+            route = Screen.Home.route,
+            enter = { slideInVertically(initialOffsetY = { it }) + fadeIn() },
+            exit = { slideOutVertically(targetOffsetY = { it }) + fadeOut() }
+        ) {
+            HomeScreen(
+                onOpenDrawer = { navController.navigate(Screen.Drawer.route) }
+            )
+        }
+        
+        composable(
+            route = Screen.Drawer.route,
+            enter = { slideInVertically(initialOffsetY = { it }) + fadeIn() },
+            exit = { slideOutVertically(targetOffsetY = { it }) + fadeOut() }
+        ) {
+            AppDrawerScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+    }
+}
+      <?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.ColorOSLauncher"
+        tools:targetApi="34">
+        
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.ColorOSLauncher"
+            android:launchMode="singleTask"
+            android:clearTaskOnLaunch="true"
+            android:stateNotNeeded="true"
+            android:windowSoftInputMode="adjustPan"
+            android:screenOrientation="unspecified">
+            
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            
+            <!-- Para establecer como launcher por defecto -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
+                  # 🎨 ColorOS Launcher
+
+Un launcher de Android inspirado en ColorOS 14 de OPPO/OnePlus, con animaciones fluidas, efecto Liquid Glass y personalización completa.
+
+## ✨ Características
+
+- 🔓 **Animación de Desbloqueo con Huella**: Efecto de escaneo con anillos animados
+- 🎭 **Animaciones de Apertura de Apps**: Transiciones suaves y paralelas
+- 🫗 **Efecto Liquid Glass**: Tarjetas con efecto de cristal líquido animado
+- 🔘 **Botones de Acción Personalizables**: Dock inferior interactivo
+- ⛶ **Modo Pantalla Completa**: Sin barras de sistema visibles
+- 🎯 **Iconos Movibles**: Arrastra y suelta apps con animaciones
+- ➕ **Agregar Aplicaciones**: Sistema completo de gestión de apps
+
+## 🚀 Tecnologías
+
+- **Kotlin** - Lenguaje principal
+- **Jetpack Compose** - UI moderna y declarativa
+- **Material Design 3** - Componentes y temas
+- **Biometric API** - Autenticación por huella
+- **Animation API** - Animaciones complejas
+
+## 📱 Requisitos
+
+- Android 8.0 (API 26) o superior
+- Soporte para Compose
+- Permiso de huella dactilar (opcional)
+
+## 🛠️ Instalación
+
+1. Clona el repositorio:
+```bash
+git clone https://github.com/tuusuario/coloros-launcher.git
+        // Efecto de pulso exterior
+        if (isScanning) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .scale(pulseScale)
+                    .background(
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = pulseAlpha),
+                        shape = CircleShape
+                    )
+            )
+        }
+        
+        // Botón principal
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .scale(scale)
+                .shadow(
+                    elevation = if (isScanning) 20.dp else 8.dp,
+                    shape = CircleShape,
+                    spotColor = MaterialTheme.colorScheme.primary
+                )
+                .background(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primaryContainer,
+                            MaterialTheme.colorScheme.primary
+                        )
+                    ),
+                    shape = CircleShape
+                )
+                .border(
+                    width = 3.dp,
+                    color = if (isSuccess) Color.Green else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.3f),
+                    shape = CircleShape
+                )
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null
+                ) {
+                    isScanning = true
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Fingerprint,
+                contentDescription = "Fingerprint",
+                modifier = Modifier.size(48.dp),
+                tint = if (isSuccess) Color.Green else MaterialTheme.colorScheme.onPrimary
+            )
+        }
+        
+        // Anillos de escaneo
+        if (isScanning) {
+            ScanningRings()
+        }
+    }
+}
+
+@Composable
+private fun ScanningRings() {
+    val infiniteTransition = rememberInfiniteTransition(label = "rings")
+    
+    repeat(3) { index ->
+        val delay = index * 300
+        val scale by infiniteTransition.animateFloat(
+            initialValue = 1f,
+            targetValue = 2f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1500, delayMillis = delay, easing = LinearOutSlowInEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "ring$index"
+        )
+        
+        val alpha by infiniteTransition.animateFloat(
+            initialValue = 0.6f,
+            targetValue = 0f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1500, delayMillis = delay, easing = LinearOutSlowInEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "ringAlpha$index"
+        )
+        
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .scale(scale)
+                .border(
+                    width = 2.dp,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = alpha),
+                    shape = CircleShape
+                )
+        )
+    }
+}
