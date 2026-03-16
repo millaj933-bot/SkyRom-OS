@@ -1240,67 +1240,278 @@ window.addEventListener('load', () => {
     setTimeout(showSetup, 500);
 });
 </script>
+</script>
 
 <style>
-/* Navigation Gesture Bar */
-.gesture-bar {
-    position: fixed;
-    bottom: 8px;
+/* PC MODE */
+body.pc-mode {
+    background: #1a1a2e !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+body.pc-mode #pcFrame {
+    display: block !important;
+    width: 900px;
+    height: 600px;
+    background: #2d2d3a;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 25px 80px rgba(0,0,0,0.6);
+    position: relative;
+}
+
+body.pc-mode #pcContent {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    display: grid;
+    grid-template-columns: 200px 1fr;
+}
+
+body.pc-mode #pcSidebar {
+    background: rgba(0,0,0,0.3);
+    backdrop-filter: blur(20px);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+body.pc-mode #pcMain {
+    position: relative;
+    overflow: hidden;
+}
+
+body.pc-mode .pc-app-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 15px;
+    padding: 30px;
+    height: calc(100% - 100px);
+    overflow-y: auto;
+}
+
+body.pc-mode .pc-dock {
+    position: absolute;
+    bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    width: 120px;
-    height: 5px;
-    background: rgba(255,255,255,0.5);
-    border-radius: 3px;
-    z-index: 10000;
-    transition: opacity 0.3s;
+    display: flex;
+    gap: 15px;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(20px);
+    padding: 15px 25px;
+    border-radius: 20px;
 }
 
-.gesture-bar.hidden {
-    opacity: 0;
-    pointer-events: none;
+body.pc-mode .pc-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s;
+    font-size: 28px;
 }
 
-/* Phone Frame Mode (when not fullscreen) */
-body:not(.fullscreen) {
+body.pc-mode .pc-icon:hover {
+    transform: scale(1.1);
+}
+
+body.pc-mode .pc-sidebar-item {
+    padding: 12px 15px;
+    border-radius: 10px;
+    color: white;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+body.pc-mode .pc-sidebar-item:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+body.pc-mode .pc-sidebar-item.active {
+    background: rgba(0,181,120,0.3);
+}
+
+/* Hide mobile elements in PC mode */
+body.pc-mode #phoneFrame,
+body.pc-mode .gesture-bar,
+body.pc-mode .action-button {
+    display: none !important;
+}
+
+/* MOBILE MODE - Fixed */
+body.mobile-mode {
     background: #000 !important;
     display: flex;
     align-items: center;
     justify-content: center;
     min-height: 100vh;
+    padding: 10px;
 }
 
-body:not(.fullscreen) #phoneFrame {
+body.mobile-mode #phoneFrame {
     display: block !important;
+    width: 360px;
+    height: 720px;
+    background: #1a1a1a;
+    border-radius: 45px;
+    padding: 12px;
+    box-shadow: 0 0 40px rgba(0,0,0,0.8);
+    position: relative;
 }
 
-body:not(.fullscreen) #lockScreen,
-body:not(.fullscreen) #homeScreen,
-body:not(.fullscreen) .status-bar,
-body:not(.fullscreen) .dock,
-body:not(.fullscreen) .action-button,
-body:not(.fullscreen) .gesture-bar {
-    position: relative !important;
-    width: 100% !important;
-    height: 100% !important;
-    border-radius: 0 !important;
+body.mobile-mode #phoneFrame::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 22px;
+    background: #000;
+    border-radius: 12px;
+    z-index: 100;
 }
 
-body:not(.fullscreen) #lockScreen {
-    border-radius: 40px !important;
+body.mobile-mode #phoneContent {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 35px;
     overflow: hidden;
+    position: relative;
 }
 
-/* Hide frame in fullscreen */
-body.fullscreen #phoneFrame {
+/* Phone buttons */
+.phone-button {
+    position: absolute;
+    width: 3px;
+    background: #333;
+    border-radius: 2px;
+}
+
+.phone-button.power {
+    right: -2px;
+    top: 140px;
+    height: 70px;
+}
+
+.phone-button.volume-up {
+    left: -2px;
+    top: 110px;
+    height: 45px;
+}
+
+.phone-button.volume-down {
+    left: -2px;
+    top: 165px;
+    height: 45px;
+}
+
+/* Gesture Bar - Only mobile */
+.gesture-bar {
+    position: fixed;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 4px;
+    background: rgba(255,255,255,0.6);
+    border-radius: 2px;
+    z-index: 10000;
+    display: none;
+}
+
+body.mobile-mode .gesture-bar {
+    display: block !important;
+    bottom: 25px;
+}
+
+body.fullscreen-mobile .gesture-bar {
+    display: block !important;
+    bottom: 15px;
+}
+
+/* Fullscreen Mobile */
+body.fullscreen-mobile {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    display: block !important;
+    padding: 0 !important;
+}
+
+body.fullscreen-mobile #phoneFrame {
     display: none !important;
 }
 
-body.fullscreen .gesture-bar {
-    bottom: 20px;
+body.fullscreen-mobile #phoneContent {
+    width: 100vw !important;
+    height: 100vh !important;
+    border-radius: 0 !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
 }
 
-/* App Launch Fix */
+/* Content positioning inside frames */
+#phoneContent, #pcMain {
+    position: relative;
+}
+
+#phoneContent > * {
+    position: absolute !important;
+}
+
+#phoneContent .status-bar {
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 45px;
+    padding: 12px 20px 0;
+}
+
+#phoneContent #lockScreen {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+}
+
+#phoneContent #homeScreen {
+    top: 45px;
+    left: 0;
+    right: 0;
+    bottom: 90px;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+#phoneContent .dock {
+    bottom: 35px;
+    left: 15px;
+    right: 15px;
+    height: 70px;
+}
+
+#phoneContent .action-button {
+    display: none !important;
+}
+
+/* App Launch Overlay */
 .app-launch-overlay {
     position: fixed;
     top: 0;
@@ -1308,10 +1519,10 @@ body.fullscreen .gesture-bar {
     width: 100%;
     height: 100%;
     background: white;
-    z-index: 500;
+    z-index: 9999;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.3s;
+    transition: opacity 0.4s ease;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1324,307 +1535,84 @@ body.fullscreen .gesture-bar {
 
 .launch-content {
     text-align: center;
-    opacity: 0;
     transform: scale(0.8);
-    transition: all 0.3s;
+    opacity: 0;
+    transition: all 0.3s ease 0.1s;
 }
 
 .app-launch-overlay.active .launch-content {
-    opacity: 1;
     transform: scale(1);
+    opacity: 1;
 }
 
 .launch-icon-large {
-    width: 80px;
-    height: 80px;
-    border-radius: 20px;
+    width: 100px;
+    height: 100px;
+    border-radius: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto 20px;
-    font-size: 40px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
 }
 
 .launch-name {
-    font-size: 24px;
+    font-size: 28px;
     color: #333;
     font-weight: 500;
 }
 
-/* Phone Frame Container */
-#phoneFrame {
-    display: none;
-    width: 380px;
-    height: 780px;
-    background: #1a1a1a;
-    border-radius: 50px;
-    padding: 15px;
-    box-shadow: 0 0 50px rgba(0,0,0,0.5);
-    position: relative;
-}
-
-#phoneFrame::before {
-    content: '';
-    position: absolute;
-    top: 25px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 120px;
-    height: 25px;
-    background: #000;
-    border-radius: 15px;
-    z-index: 10;
-}
-
-#phoneContent {
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 40px;
-    overflow: hidden;
-    position: relative;
-}
-
-/* Side buttons */
-.phone-button {
-    position: absolute;
-    width: 3px;
-    background: #333;
-    border-radius: 2px;
-}
-
-.phone-button.power {
-    right: -3px;
-    top: 150px;
-    height: 80px;
-}
-
-.phone-button.volume-up {
-    left: -3px;
-    top: 120px;
-    height: 50px;
-}
-
-.phone-button.volume-down {
-    left: -3px;
-    top: 180px;
-    height: 50px;
-}
-
-/* Fix for app grid in frame mode */
-body:not(.fullscreen) #homeScreen {
-    height: calc(100% - 160px) !important;
-    padding-top: 60px !important;
-}
-
-body:not(.fullscreen) .status-bar {
-    position: absolute !important;
-    top: 0 !important;
-    height: 50px !important;
-    padding-top: 15px !important;
-}
-
-body:not(.fullscreen) .dock {
-    position: absolute !important;
-    bottom: 20px !important;
-    left: 20px !important;
-    right: 20px !important;
-    height: 70px !important;
-}
-
-body:not(.fullscreen) .action-button {
+/* Hide elements properly */
+.hidden {
     display: none !important;
-}
-
-/* Settings panel fix for frame mode */
-body:not(.fullscreen) .settings-panel {
-    width: 100% !important;
-    right: -100% !important;
-}
-
-body:not(.fullscreen) .settings-panel.open {
-    right: 0 !important;
-}
-
-/* Modal fix for frame mode */
-body:not(.fullscreen) .modal-content {
-    max-width: 300px !important;
 }
 </style>
 
-<!-- Phone Frame (shown when not fullscreen) -->
-<div id="phoneFrame">
-    <div class="phone-button power"></div>
-    <div class="phone-button volume-up"></div>
-    <div class="phone-button volume-down"></div>
-    <div id="phoneContent">
-        <!-- Content will be moved here -->
+<!-- PC Frame -->
+<div id="pcFrame" style="display: none;">
+    <div id="pcContent">
+        <div id="pcSidebar">
+            <div style="color: white; font-size: 20px; margin-bottom: 20px; font-weight: 600;">📱 ColorOS</div>
+            <div class="pc-sidebar-item active" onclick="pcSwitchTab('home')">🏠 Home</div>
+            <div class="pc-sidebar-item" onclick="pcSwitchTab('apps')">📱 Apps</div>
+            <div class="pc-sidebar-item" onclick="pcSwitchTab('settings')">⚙️ Settings</div>
+            <div class="pc-sidebar-item" onclick="pcSwitchTab('widgets')">🎨 Widgets</div>
+        </div>
+        <div id="pcMain">
+            <div class="pc-app-grid" id="pcAppGrid"></div>
+            <div class="pc-dock" id="pcDock"></div>
+        </div>
     </div>
 </div>
 
-<!-- Gesture Navigation Bar -->
+<!-- Phone Frame -->
+<div id="phoneFrame" style="display: none;">
+    <div class="phone-button power"></div>
+    <div class="phone-button volume-up"></div>
+    <div class="phone-button volume-down"></div>
+    <div id="phoneContent"></div>
+</div>
+
+<!-- Gesture Bar -->
 <div class="gesture-bar" id="gestureBar"></div>
 
+<!-- App Launch Overlay -->
+<div class="app-launch-overlay" id="launchOverlay">
+    <div class="launch-content">
+        <div class="launch-icon-large" id="launchIconLarge"></div>
+        <div class="launch-name" id="launchName"></div>
+    </div>
+</div>
+
 <script>
-// Move content to frame when not fullscreen
-function updateFrameMode() {
-    const isFullscreen = document.body.classList.contains('fullscreen');
-    const frame = document.getElementById('phoneContent');
-    const body = document.body;
-    
-    if (!isFullscreen) {
-        // Move main elements to frame
-        const elements = ['lockScreen', 'homeScreen', 'statusBar', 'dock', 'settingsPanel', 'addAppModal', 'appLaunchOverlay'];
-        elements.forEach(id => {
-            const el = document.getElementById(id) || document.querySelector('.' + id);
-            if (el && el.parentElement !== frame) {
-                frame.appendChild(el);
-            }
-        });
-    } else {
-        // Move back to body
-        const elements = ['lockScreen', 'homeScreen', 'statusBar', 'dock', 'settingsPanel', 'addAppModal', 'appLaunchOverlay'];
-        elements.forEach(id => {
-            const el = document.getElementById(id) || document.querySelector('.' + id);
-            if (el && el.parentElement === frame) {
-                body.appendChild(el);
-            }
-        });
-    }
-}
+let currentMode = 'mobile'; // 'mobile' or 'pc'
+let isFullscreenMobile = false;
 
-// Override toggleFullscreen
-function toggleFullscreen() {
-    document.body.classList.toggle('fullscreen');
-    document.getElementById('fullscreenToggle').classList.toggle('active');
-    document.getElementById('gestureBar').classList.toggle('hidden', !document.body.classList.contains('fullscreen'));
-    updateFrameMode();
-    
-    // Update settings text
-    const t = translations[currentLang];
-    setTimeout(() => {
-        if (document.body.classList.contains('fullscreen')) {
-            document.querySelector('.unlock-text').textContent = t.unlock;
-        }
-    }, 300);
-}
-
-// Initialize frame mode on load
+// Initialize
 window.addEventListener('load', () => {
-    document.body.classList.remove('fullscreen');
-    updateFrameMode();
-    document.getElementById('gestureBar').classList.remove('hidden');
+    showSetup();
 });
 
-// Fix launch app - no text, smooth transition
-function launchApp(app) {
-    const overlay = document.getElementById('launchOverlay');
-    const content = overlay.querySelector('.launch-content') || createLaunchContent(overlay);
-    
-    const iconDiv = content.querySelector('.launch-icon-large');
-    const nameDiv = content.querySelector('.launch-name');
-    
-    iconDiv.innerHTML = app.icon;
-    iconDiv.style.background = `linear-gradient(135deg, ${app.color}, ${adjustColor(app.color, 20)})`;
-    nameDiv.textContent = app.name;
-    
-    overlay.classList.add('active');
-    
-    // Auto close after animation
-    setTimeout(() => {
-        overlay.classList.remove('active');
-    }, 2000);
-}
-
-function createLaunchContent(overlay) {
-    overlay.innerHTML = `
-        <div class="launch-content">
-            <div class="launch-icon-large"></div>
-            <div class="launch-name"></div>
-        </div>
-    `;
-    return overlay.querySelector('.launch-content');
-}
-
-// Gesture bar functionality
-let gestureStartY = 0;
-let gestureStartX = 0;
-let isGestureActive = false;
-
-const gestureBar = document.getElementById('gestureBar');
-
-gestureBar.addEventListener('touchstart', (e) => {
-    gestureStartY = e.touches[0].clientY;
-    gestureStartX = e.touches[0].clientX;
-    isGestureActive = true;
-    gestureBar.style.transform = 'translateX(-50%) scaleX(1.5)';
-}, {passive: true});
-
-gestureBar.addEventListener('touchmove', (e) => {
-    if (!isGestureActive) return;
-    const currentY = e.touches[0].clientY;
-    const diff = gestureStartY - currentY;
-    
-    if (diff > 50) {
-        gestureBar.style.opacity = '0.5';
-    }
-}, {passive: true});
-
-gestureBar.addEventListener('touchend', (e) => {
-    if (!isGestureActive) return;
-    isGestureActive = false;
-    gestureBar.style.transform = 'translateX(-50%) scaleX(1)';
-    gestureBar.style.opacity = '1';
-    
-    const endY = e.changedTouches[0].clientY;
-    const diff = gestureStartY - endY;
-    
-    // Swipe up to go home
-    if (diff > 100) {
-        closeApp();
-        // Haptic feedback if available
-        if (navigator.vibrate) navigator.vibrate(10);
-    }
-}, {passive: true});
-
-// Also allow swipe up from bottom edge of screen
-document.addEventListener('touchstart', (e) => {
-    const touchY = e.touches[0].clientY;
-    const screenHeight = window.innerHeight;
-    
-    // Only if near bottom and not on gesture bar
-    if (touchY > screenHeight - 100 && e.target !== gestureBar) {
-        gestureStartY = touchY;
-        isGestureActive = true;
-    }
-}, {passive: true});
-
-document.addEventListener('touchend', (e) => {
-    if (!isGestureActive) return;
-    isGestureActive = false;
-    
-    const endY = e.changedTouches[0].clientY;
-    const diff = gestureStartY - endY;
-    
-    if (diff > 100) {
-        closeApp();
-    }
-}, {passive: true});
-
-// Close app function
-function closeApp() {
-    const overlay = document.getElementById('launchOverlay');
-    overlay.classList.remove('active');
-    
-    // Reset icon
-    const icon = document.getElementById('launchIcon');
-    if (icon) {
-        icon.style.transform = 'translate(-50%, -50%) scale(1)';
-        icon.style.opacity = '1';
-    }
-}
-
-// Update setup to include frame mode option
 function showSetup() {
     const setup = document.createElement('div');
     setup.id = 'setupScreen';
@@ -1635,29 +1623,49 @@ function showSetup() {
         width: 100%;
         height: 100%;
         background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
-        z-index: 2000;
+        z-index: 20000;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         padding: 40px;
         color: white;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     `;
     
     setup.innerHTML = `
-        <h1 style="font-size: 28px; margin-bottom: 40px; font-weight: 300;">ColorOS Launcher</h1>
+        <h1 style="font-size: 32px; margin-bottom: 10px; font-weight: 300;">ColorOS Launcher</h1>
+        <p style="opacity: 0.6; margin-bottom: 40px;">v2.0</p>
         
-        <div style="width: 100%; max-width: 300px;">
-            <h3 style="margin-bottom: 15px; opacity: 0.9;">${translations.en.selectDevice}</h3>
-            <div style="display: flex; gap: 10px; margin-bottom: 30px;">
-                <button onclick="selectDevice('android')" id="btn-android" style="flex: 1; padding: 15px; border: 2px solid #00B578; background: transparent; color: white; border-radius: 12px; cursor: pointer;">Android</button>
-                <button onclick="selectDevice('ios')" id="btn-ios" style="flex: 1; padding: 15px; border: 2px solid rgba(255,255,255,0.3); background: transparent; color: white; border-radius: 12px; cursor: pointer;">iOS</button>
+        <div style="width: 100%; max-width: 400px; background: rgba(255,255,255,0.05); padding: 30px; border-radius: 20px;">
+            <h3 style="margin-bottom: 20px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7;">Select Mode</h3>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px;">
+                <button onclick="selectMode('mobile')" id="btn-mobile" style="padding: 20px; border: 2px solid #00B578; background: rgba(0,181,120,0.1); color: white; border-radius: 15px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                    <span style="font-size: 30px;">📱</span>
+                    <span>Mobile</span>
+                </button>
+                <button onclick="selectMode('pc')" id="btn-pc" style="padding: 20px; border: 2px solid rgba(255,255,255,0.2); background: transparent; color: white; border-radius: 15px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                    <span style="font-size: 30px;">💻</span>
+                    <span>Desktop</span>
+                </button>
             </div>
             
-            <h3 style="margin-bottom: 15px; opacity: 0.9;">${translations.en.selectLang}</h3>
-            <select id="langSelect" onchange="selectLanguage(this.value)" style="width: 100%; padding: 15px; border-radius: 12px; border: none; background: rgba(255,255,255,0.1); color: white; font-size: 16px; margin-bottom: 30px;">
+            <div id="mobileOptions" style="margin-bottom: 20px;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 10px;">
+                    <input type="checkbox" id="fullscreenMobile" style="width: 18px; height: 18px;">
+                    <span>Fullscreen (no phone frame)</span>
+                </label>
+            </div>
+            
+            <div id="pcOptions" style="display: none; margin-bottom: 20px;">
+                <p style="opacity: 0.6; font-size: 14px;">Optimized for mouse and keyboard navigation</p>
+            </div>
+            
+            <h3 style="margin-bottom: 15px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7;">Language</h3>
+            <select id="langSelect" style="width: 100%; padding: 15px; border-radius: 10px; border: none; background: rgba(255,255,255,0.1); color: white; font-size: 16px; margin-bottom: 30px;">
+                <option value="en">English</option>
                 <option value="es">Español</option>
-                <option value="en" selected>English</option>
                 <option value="pt">Português</option>
                 <option value="fr">Français</option>
                 <option value="de">Deutsch</option>
@@ -1666,26 +1674,10 @@ function showSetup() {
                 <option value="ja">日本語</option>
                 <option value="ko">한국어</option>
                 <option value="ru">Русский</option>
-                <option value="ar">العربية</option>
-                <option value="hi">हिन्दी</option>
-                <option value="tr">Türkçe</option>
-                <option value="pl">Polski</option>
-                <option value="nl">Nederlands</option>
-                <option value="sv">Svenska</option>
-                <option value="th">ไทย</option>
-                <option value="vi">Tiếng Việt</option>
-                <option value="id">Bahasa Indonesia</option>
             </select>
             
-            <div style="margin-bottom: 20px;">
-                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                    <input type="checkbox" id="fullscreenCheck" style="width: 20px; height: 20px;" onchange="togglePreviewMode()">
-                    <span>Fullscreen Mode (no phone frame)</span>
-                </label>
-            </div>
-            
-            <button onclick="finishSetup()" style="width: 100%; padding: 18px; background: #00B578; color: white; border: none; border-radius: 12px; font-size: 18px; cursor: pointer; font-weight: 500;">
-                ${translations.en.continue}
+            <button onclick="finishSetup()" style="width: 100%; padding: 18px; background: #00B578; color: white; border: none; border-radius: 12px; font-size: 18px; cursor: pointer; font-weight: 600;">
+                Continue
             </button>
         </div>
     `;
@@ -1693,40 +1685,219 @@ function showSetup() {
     document.body.appendChild(setup);
 }
 
-function togglePreviewMode() {
-    const isFullscreen = document.getElementById('fullscreenCheck').checked;
-    if (isFullscreen) {
-        document.body.classList.add('fullscreen');
-    } else {
-        document.body.classList.remove('fullscreen');
-    }
-    updateFrameMode();
+function selectMode(mode) {
+    currentMode = mode;
+    document.getElementById('btn-mobile').style.borderColor = mode === 'mobile' ? '#00B578' : 'rgba(255,255,255,0.2)';
+    document.getElementById('btn-mobile').style.background = mode === 'mobile' ? 'rgba(0,181,120,0.1)' : 'transparent';
+    document.getElementById('btn-pc').style.borderColor = mode === 'pc' ? '#00B578' : 'rgba(255,255,255,0.2)';
+    document.getElementById('btn-pc').style.background = mode === 'pc' ? 'rgba(0,181,120,0.1)' : 'transparent';
+    
+    document.getElementById('mobileOptions').style.display = mode === 'mobile' ? 'block' : 'none';
+    document.getElementById('pcOptions').style.display = mode === 'pc' ? 'block' : 'none';
 }
 
-// Override finish setup
 function finishSetup() {
-    const isFullscreen = document.getElementById('fullscreenCheck').checked;
-    if (isFullscreen) {
-        document.body.classList.add('fullscreen');
-        document.getElementById('gestureBar').classList.remove('hidden');
+    const lang = document.getElementById('langSelect').value;
+    currentLang = lang;
+    
+    if (currentMode === 'mobile') {
+        isFullscreenMobile = document.getElementById('fullscreenMobile').checked;
+        document.body.classList.add('mobile-mode');
+        if (isFullscreenMobile) {
+            document.body.classList.add('fullscreen-mobile');
+        }
+        initMobileMode();
     } else {
-        document.body.classList.remove('fullscreen');
-        document.getElementById('gestureBar').classList.add('hidden');
+        document.body.classList.add('pc-mode');
+        initPCMode();
     }
-    updateFrameMode();
     
     const setup = document.getElementById('setupScreen');
     setup.style.opacity = '0';
     setup.style.transition = 'opacity 0.5s';
     setTimeout(() => setup.remove(), 500);
-    applyLanguage();
-    renderApps();
 }
 
-// Initialize
-window.addEventListener('load', () => {
-    setTimeout(showSetup, 500);
-});
+function initMobileMode() {
+    const phoneContent = document.getElementById('phoneContent');
+    
+    // Move elements to phone frame
+    const elements = ['lockScreen', 'statusBar', 'homeScreen', 'dock', 'settingsPanel', 'addAppModal'];
+    elements.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.style.position = 'absolute';
+            phoneContent.appendChild(el);
+        }
+    });
+    
+    // Position elements
+    const lockScreen = document.getElementById('lockScreen');
+    const statusBar = document.querySelector('.status-bar');
+    const homeScreen = document.getElementById('homeScreen');
+    const dock = document.querySelector('.dock');
+    
+    if (lockScreen) {
+        lockScreen.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000;';
+    }
+    
+    if (statusBar) {
+        statusBar.style.cssText = 'position: absolute; top: 0; left: 0; right: 0; height: 45px; padding: 12px 20px 0; z-index: 100;';
+    }
+    
+    if (homeScreen) {
+        homeScreen.style.cssText = 'position: absolute; top: 45px; left: 0; right: 0; bottom: 90px; padding: 20px; overflow-y: auto;';
+    }
+    
+    if (dock) {
+        dock.style.cssText = 'position: absolute; bottom: 35px; left: 15px; right: 15px; height: 70px; z-index: 99;';
+    }
+    
+    renderApps();
+    setupGestureBar();
+}
+
+function initPCMode() {
+    const pcAppGrid = document.getElementById('pcAppGrid');
+    const pcDock = document.getElementById('pcDock');
+    
+    // Render PC apps
+    apps.forEach(app => {
+        const div = document.createElement('div');
+        div.className = 'pc-icon';
+        div.style.background = `linear-gradient(135deg, ${app.color}, ${adjustColor(app.color, 20)})`;
+        div.innerHTML = app.icon;
+        div.title = app.name;
+        div.onclick = () => launchAppPC(app);
+        pcAppGrid.appendChild(div);
+    });
+    
+    // PC Dock
+    const dockApps = apps.slice(0, 4);
+    dockApps.forEach(app => {
+        const div = document.createElement('div');
+        div.className = 'pc-icon';
+        div.style.background = `linear-gradient(135deg, ${app.color}, ${adjustColor(app.color, 20)})`;
+        div.innerHTML = app.icon;
+        div.onclick = () => launchAppPC(app);
+        pcDock.appendChild(div);
+    });
+}
+
+function launchAppPC(app) {
+    const overlay = document.getElementById('launchOverlay');
+    document.getElementById('launchIconLarge').innerHTML = app.icon;
+    document.getElementById('launchIconLarge').style.background = `linear-gradient(135deg, ${app.color}, ${adjustColor(app.color, 20)})`;
+    document.getElementById('launchName').textContent = app.name;
+    
+    overlay.classList.add('active');
+    
+    setTimeout(() => {
+        overlay.classList.remove('active');
+    }, 1500);
+}
+
+function launchApp(app) {
+    const overlay = document.getElementById('launchOverlay');
+    document.getElementById('launchIconLarge').innerHTML = app.icon;
+    document.getElementById('launchIconLarge').style.background = `linear-gradient(135deg, ${app.color}, ${adjustColor(app.color, 20)})`;
+    document.getElementById('launchName').textContent = app.name;
+    
+    overlay.classList.add('active');
+    
+    setTimeout(() => {
+        overlay.classList.remove('active');
+    }, 2000);
+}
+
+function setupGestureBar() {
+    const bar = document.getElementById('gestureBar');
+    let startY = 0;
+    
+    bar.addEventListener('touchstart', (e) => {
+        startY = e.touches[0].clientY;
+        bar.style.transform = 'translateX(-50%) scaleX(1.3)';
+    }, {passive: true});
+    
+    bar.addEventListener('touchend', (e) => {
+        const endY = e.changedTouches[0].clientY;
+        bar.style.transform = 'translateX(-50%) scaleX(1)';
+        
+        if (startY - endY > 30) {
+            // Swipe up - go home
+            document.getElementById('launchOverlay').classList.remove('active');
+            document.getElementById('settingsPanel').classList.remove('open');
+        }
+    }, {passive: true});
+}
+
+function pcSwitchTab(tab) {
+    document.querySelectorAll('.pc-sidebar-item').forEach(el => el.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
+// Close app function
+function closeApp() {
+    document.getElementById('launchOverlay').classList.remove('active');
+}
+
+// Toggle settings
+function toggleSettings() {
+    const panel = document.getElementById('settingsPanel');
+    if (panel) {
+        panel.classList.toggle('open');
+    }
+}
+
+// Toggle fullscreen for mobile
+function toggleFullscreen() {
+    isFullscreenMobile = !isFullscreenMobile;
+    document.body.classList.toggle('fullscreen-mobile');
+    document.getElementById('fullscreenToggle').classList.toggle('active');
+}
+
+// Render apps for mobile
+function renderApps() {
+    const grid = document.getElementById('appGrid');
+    if (!grid) return;
+    
+    grid.innerHTML = '';
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(4, 1fr)';
+    grid.style.gap = '15px';
+    
+    apps.forEach((app, index) => {
+        const item = document.createElement('div');
+        item.className = 'app-item';
+        item.style.cssText = 'display: flex; flex-direction: column; align-items: center; cursor: pointer;';
+        item.innerHTML = `
+            <div style="width: 60px; height: 60px; border-radius: 18px; background: linear-gradient(135deg, ${app.color}, ${adjustColor(app.color, 20)}); display: flex; align-items: center; justify-content: center; margin-bottom: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                ${app.icon}
+            </div>
+            <div style="color: white; font-size: 11px; text-align: center; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">${app.name}</div>
+        `;
+        item.onclick = () => launchApp(app);
+        grid.appendChild(item);
+    });
+}
+
+// Helper
+function adjustColor(color, amount) {
+    const num = parseInt(color.replace('#', ''), 16);
+    const r = Math.min(255, Math.max(0, (num >> 16) + amount));
+    const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amount));
+    const b = Math.min(255, Math.max(0, (num & 0x0000FF) + amount));
+    return `#${(0x1000000 + r * 0x10000 + g * 0x100 + b).toString(16).slice(1)}`;
+}
+
+// Apply translations
+function applyLanguage() {
+    const t = translations[currentLang];
+    if (!t) return;
+    
+    const unlockText = document.querySelector('.unlock-text');
+    if (unlockText) unlockText.textContent = t.unlock;
+}
 </script>
 
 </body>
