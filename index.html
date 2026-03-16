@@ -1241,5 +1241,493 @@ window.addEventListener('load', () => {
 });
 </script>
 
+<style>
+/* Navigation Gesture Bar */
+.gesture-bar {
+    position: fixed;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 5px;
+    background: rgba(255,255,255,0.5);
+    border-radius: 3px;
+    z-index: 10000;
+    transition: opacity 0.3s;
+}
+
+.gesture-bar.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Phone Frame Mode (when not fullscreen) */
+body:not(.fullscreen) {
+    background: #000 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+body:not(.fullscreen) #phoneFrame {
+    display: block !important;
+}
+
+body:not(.fullscreen) #lockScreen,
+body:not(.fullscreen) #homeScreen,
+body:not(.fullscreen) .status-bar,
+body:not(.fullscreen) .dock,
+body:not(.fullscreen) .action-button,
+body:not(.fullscreen) .gesture-bar {
+    position: relative !important;
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 0 !important;
+}
+
+body:not(.fullscreen) #lockScreen {
+    border-radius: 40px !important;
+    overflow: hidden;
+}
+
+/* Hide frame in fullscreen */
+body.fullscreen #phoneFrame {
+    display: none !important;
+}
+
+body.fullscreen .gesture-bar {
+    bottom: 20px;
+}
+
+/* App Launch Fix */
+.app-launch-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: white;
+    z-index: 500;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.app-launch-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.launch-content {
+    text-align: center;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.3s;
+}
+
+.app-launch-overlay.active .launch-content {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.launch-icon-large {
+    width: 80px;
+    height: 80px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 40px;
+}
+
+.launch-name {
+    font-size: 24px;
+    color: #333;
+    font-weight: 500;
+}
+
+/* Phone Frame Container */
+#phoneFrame {
+    display: none;
+    width: 380px;
+    height: 780px;
+    background: #1a1a1a;
+    border-radius: 50px;
+    padding: 15px;
+    box-shadow: 0 0 50px rgba(0,0,0,0.5);
+    position: relative;
+}
+
+#phoneFrame::before {
+    content: '';
+    position: absolute;
+    top: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 25px;
+    background: #000;
+    border-radius: 15px;
+    z-index: 10;
+}
+
+#phoneContent {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 40px;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Side buttons */
+.phone-button {
+    position: absolute;
+    width: 3px;
+    background: #333;
+    border-radius: 2px;
+}
+
+.phone-button.power {
+    right: -3px;
+    top: 150px;
+    height: 80px;
+}
+
+.phone-button.volume-up {
+    left: -3px;
+    top: 120px;
+    height: 50px;
+}
+
+.phone-button.volume-down {
+    left: -3px;
+    top: 180px;
+    height: 50px;
+}
+
+/* Fix for app grid in frame mode */
+body:not(.fullscreen) #homeScreen {
+    height: calc(100% - 160px) !important;
+    padding-top: 60px !important;
+}
+
+body:not(.fullscreen) .status-bar {
+    position: absolute !important;
+    top: 0 !important;
+    height: 50px !important;
+    padding-top: 15px !important;
+}
+
+body:not(.fullscreen) .dock {
+    position: absolute !important;
+    bottom: 20px !important;
+    left: 20px !important;
+    right: 20px !important;
+    height: 70px !important;
+}
+
+body:not(.fullscreen) .action-button {
+    display: none !important;
+}
+
+/* Settings panel fix for frame mode */
+body:not(.fullscreen) .settings-panel {
+    width: 100% !important;
+    right: -100% !important;
+}
+
+body:not(.fullscreen) .settings-panel.open {
+    right: 0 !important;
+}
+
+/* Modal fix for frame mode */
+body:not(.fullscreen) .modal-content {
+    max-width: 300px !important;
+}
+</style>
+
+<!-- Phone Frame (shown when not fullscreen) -->
+<div id="phoneFrame">
+    <div class="phone-button power"></div>
+    <div class="phone-button volume-up"></div>
+    <div class="phone-button volume-down"></div>
+    <div id="phoneContent">
+        <!-- Content will be moved here -->
+    </div>
+</div>
+
+<!-- Gesture Navigation Bar -->
+<div class="gesture-bar" id="gestureBar"></div>
+
+<script>
+// Move content to frame when not fullscreen
+function updateFrameMode() {
+    const isFullscreen = document.body.classList.contains('fullscreen');
+    const frame = document.getElementById('phoneContent');
+    const body = document.body;
+    
+    if (!isFullscreen) {
+        // Move main elements to frame
+        const elements = ['lockScreen', 'homeScreen', 'statusBar', 'dock', 'settingsPanel', 'addAppModal', 'appLaunchOverlay'];
+        elements.forEach(id => {
+            const el = document.getElementById(id) || document.querySelector('.' + id);
+            if (el && el.parentElement !== frame) {
+                frame.appendChild(el);
+            }
+        });
+    } else {
+        // Move back to body
+        const elements = ['lockScreen', 'homeScreen', 'statusBar', 'dock', 'settingsPanel', 'addAppModal', 'appLaunchOverlay'];
+        elements.forEach(id => {
+            const el = document.getElementById(id) || document.querySelector('.' + id);
+            if (el && el.parentElement === frame) {
+                body.appendChild(el);
+            }
+        });
+    }
+}
+
+// Override toggleFullscreen
+function toggleFullscreen() {
+    document.body.classList.toggle('fullscreen');
+    document.getElementById('fullscreenToggle').classList.toggle('active');
+    document.getElementById('gestureBar').classList.toggle('hidden', !document.body.classList.contains('fullscreen'));
+    updateFrameMode();
+    
+    // Update settings text
+    const t = translations[currentLang];
+    setTimeout(() => {
+        if (document.body.classList.contains('fullscreen')) {
+            document.querySelector('.unlock-text').textContent = t.unlock;
+        }
+    }, 300);
+}
+
+// Initialize frame mode on load
+window.addEventListener('load', () => {
+    document.body.classList.remove('fullscreen');
+    updateFrameMode();
+    document.getElementById('gestureBar').classList.remove('hidden');
+});
+
+// Fix launch app - no text, smooth transition
+function launchApp(app) {
+    const overlay = document.getElementById('launchOverlay');
+    const content = overlay.querySelector('.launch-content') || createLaunchContent(overlay);
+    
+    const iconDiv = content.querySelector('.launch-icon-large');
+    const nameDiv = content.querySelector('.launch-name');
+    
+    iconDiv.innerHTML = app.icon;
+    iconDiv.style.background = `linear-gradient(135deg, ${app.color}, ${adjustColor(app.color, 20)})`;
+    nameDiv.textContent = app.name;
+    
+    overlay.classList.add('active');
+    
+    // Auto close after animation
+    setTimeout(() => {
+        overlay.classList.remove('active');
+    }, 2000);
+}
+
+function createLaunchContent(overlay) {
+    overlay.innerHTML = `
+        <div class="launch-content">
+            <div class="launch-icon-large"></div>
+            <div class="launch-name"></div>
+        </div>
+    `;
+    return overlay.querySelector('.launch-content');
+}
+
+// Gesture bar functionality
+let gestureStartY = 0;
+let gestureStartX = 0;
+let isGestureActive = false;
+
+const gestureBar = document.getElementById('gestureBar');
+
+gestureBar.addEventListener('touchstart', (e) => {
+    gestureStartY = e.touches[0].clientY;
+    gestureStartX = e.touches[0].clientX;
+    isGestureActive = true;
+    gestureBar.style.transform = 'translateX(-50%) scaleX(1.5)';
+}, {passive: true});
+
+gestureBar.addEventListener('touchmove', (e) => {
+    if (!isGestureActive) return;
+    const currentY = e.touches[0].clientY;
+    const diff = gestureStartY - currentY;
+    
+    if (diff > 50) {
+        gestureBar.style.opacity = '0.5';
+    }
+}, {passive: true});
+
+gestureBar.addEventListener('touchend', (e) => {
+    if (!isGestureActive) return;
+    isGestureActive = false;
+    gestureBar.style.transform = 'translateX(-50%) scaleX(1)';
+    gestureBar.style.opacity = '1';
+    
+    const endY = e.changedTouches[0].clientY;
+    const diff = gestureStartY - endY;
+    
+    // Swipe up to go home
+    if (diff > 100) {
+        closeApp();
+        // Haptic feedback if available
+        if (navigator.vibrate) navigator.vibrate(10);
+    }
+}, {passive: true});
+
+// Also allow swipe up from bottom edge of screen
+document.addEventListener('touchstart', (e) => {
+    const touchY = e.touches[0].clientY;
+    const screenHeight = window.innerHeight;
+    
+    // Only if near bottom and not on gesture bar
+    if (touchY > screenHeight - 100 && e.target !== gestureBar) {
+        gestureStartY = touchY;
+        isGestureActive = true;
+    }
+}, {passive: true});
+
+document.addEventListener('touchend', (e) => {
+    if (!isGestureActive) return;
+    isGestureActive = false;
+    
+    const endY = e.changedTouches[0].clientY;
+    const diff = gestureStartY - endY;
+    
+    if (diff > 100) {
+        closeApp();
+    }
+}, {passive: true});
+
+// Close app function
+function closeApp() {
+    const overlay = document.getElementById('launchOverlay');
+    overlay.classList.remove('active');
+    
+    // Reset icon
+    const icon = document.getElementById('launchIcon');
+    if (icon) {
+        icon.style.transform = 'translate(-50%, -50%) scale(1)';
+        icon.style.opacity = '1';
+    }
+}
+
+// Update setup to include frame mode option
+function showSetup() {
+    const setup = document.createElement('div');
+    setup.id = 'setupScreen';
+    setup.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+        z-index: 2000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        color: white;
+    `;
+    
+    setup.innerHTML = `
+        <h1 style="font-size: 28px; margin-bottom: 40px; font-weight: 300;">ColorOS Launcher</h1>
+        
+        <div style="width: 100%; max-width: 300px;">
+            <h3 style="margin-bottom: 15px; opacity: 0.9;">${translations.en.selectDevice}</h3>
+            <div style="display: flex; gap: 10px; margin-bottom: 30px;">
+                <button onclick="selectDevice('android')" id="btn-android" style="flex: 1; padding: 15px; border: 2px solid #00B578; background: transparent; color: white; border-radius: 12px; cursor: pointer;">Android</button>
+                <button onclick="selectDevice('ios')" id="btn-ios" style="flex: 1; padding: 15px; border: 2px solid rgba(255,255,255,0.3); background: transparent; color: white; border-radius: 12px; cursor: pointer;">iOS</button>
+            </div>
+            
+            <h3 style="margin-bottom: 15px; opacity: 0.9;">${translations.en.selectLang}</h3>
+            <select id="langSelect" onchange="selectLanguage(this.value)" style="width: 100%; padding: 15px; border-radius: 12px; border: none; background: rgba(255,255,255,0.1); color: white; font-size: 16px; margin-bottom: 30px;">
+                <option value="es">Español</option>
+                <option value="en" selected>English</option>
+                <option value="pt">Português</option>
+                <option value="fr">Français</option>
+                <option value="de">Deutsch</option>
+                <option value="it">Italiano</option>
+                <option value="zh">中文</option>
+                <option value="ja">日本語</option>
+                <option value="ko">한국어</option>
+                <option value="ru">Русский</option>
+                <option value="ar">العربية</option>
+                <option value="hi">हिन्दी</option>
+                <option value="tr">Türkçe</option>
+                <option value="pl">Polski</option>
+                <option value="nl">Nederlands</option>
+                <option value="sv">Svenska</option>
+                <option value="th">ไทย</option>
+                <option value="vi">Tiếng Việt</option>
+                <option value="id">Bahasa Indonesia</option>
+            </select>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" id="fullscreenCheck" style="width: 20px; height: 20px;" onchange="togglePreviewMode()">
+                    <span>Fullscreen Mode (no phone frame)</span>
+                </label>
+            </div>
+            
+            <button onclick="finishSetup()" style="width: 100%; padding: 18px; background: #00B578; color: white; border: none; border-radius: 12px; font-size: 18px; cursor: pointer; font-weight: 500;">
+                ${translations.en.continue}
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(setup);
+}
+
+function togglePreviewMode() {
+    const isFullscreen = document.getElementById('fullscreenCheck').checked;
+    if (isFullscreen) {
+        document.body.classList.add('fullscreen');
+    } else {
+        document.body.classList.remove('fullscreen');
+    }
+    updateFrameMode();
+}
+
+// Override finish setup
+function finishSetup() {
+    const isFullscreen = document.getElementById('fullscreenCheck').checked;
+    if (isFullscreen) {
+        document.body.classList.add('fullscreen');
+        document.getElementById('gestureBar').classList.remove('hidden');
+    } else {
+        document.body.classList.remove('fullscreen');
+        document.getElementById('gestureBar').classList.add('hidden');
+    }
+    updateFrameMode();
+    
+    const setup = document.getElementById('setupScreen');
+    setup.style.opacity = '0';
+    setup.style.transition = 'opacity 0.5s';
+    setTimeout(() => setup.remove(), 500);
+    applyLanguage();
+    renderApps();
+}
+
+// Initialize
+window.addEventListener('load', () => {
+    setTimeout(showSetup, 500);
+});
+</script>
+
 </body>
 </html>
